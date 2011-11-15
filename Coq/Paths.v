@@ -289,6 +289,21 @@ Definition happly_dep {A} {P : A -> Type} {f g : forall x, P x} :
   (f ~~> g) -> (forall x, f x ~~> g x) :=
   fun p x => map (fun h => h x) p.
 
+(** How happly interacts with map. *)
+
+Lemma map_precompose {A B C} (f : B -> C) (g : B -> C) (h : A -> B)
+  (p : f ~~> g) (a : A) :
+  happly (map (fun f' => f' ○ h) p) a ~~> happly p (h a).
+Proof.
+  path_induction.
+Defined.
+
+Lemma map_postcompose {A B C} (f : A -> B) (g : A -> B) (h : B -> C)
+  (p : f ~~> g) (a : A) :
+  happly (map (fun f' => h ○ f') p) a ~~> map h (happly p a).
+Proof.
+  path_induction.
+Defined.
 
 (** We declare some more [Hint Resolve] hints, now in the "hint
    database" [path_hints].  In general various hints (resolve,
