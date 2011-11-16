@@ -246,12 +246,6 @@ Section ReflectiveSubcategory.
       apply reflect_functor, snd.
     Defined.
 
-    Definition prod_path (x x' : X) (y y' : Y) :
-      (x ~~> x') -> (y ~~> y') -> ((x,y) ~~> (x',y')).
-    Proof.
-      path_induction.
-    Defined.
-
     Definition prod_in_rsc : in_rsc (X * Y).
     Proof.
       apply reflect_retract_in_rsc with (r := prod_map_back).

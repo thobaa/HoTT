@@ -305,6 +305,14 @@ Proof.
   path_induction.
 Defined.
 
+(** Paths in cartesian products. *)
+
+Definition prod_path {X Y} (x x' : X) (y y' : Y) :
+  (x ~~> x') -> (y ~~> y') -> ((x,y) ~~> (x',y')).
+Proof.
+  path_induction.
+Defined.
+
 (** We declare some more [Hint Resolve] hints, now in the "hint
    database" [path_hints].  In general various hints (resolve,
    rewrite, unfold hints) can be grouped into "databases". This is
