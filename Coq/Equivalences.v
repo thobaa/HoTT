@@ -627,6 +627,25 @@ Section FibrationReplacement.
 
 End FibrationReplacement.
 
+(** The construction of total spaces of fibrations is "associative". *)
+
+Definition total_assoc A (P : A -> Type) (Q : sigT P -> Type) :
+  equiv { x:A & { p:P x & Q (existT _ x p)}} (sigT Q).
+Proof.
+  intros A P Q.
+  exists (fun H: {x : A & {p : P x & Q (existT _ x p)}} =>
+    let (x,pq) := H in let (p,q):= pq in (existT _ (existT _ x p) q)).
+  apply hequiv_is_equiv with
+    (g := fun H: sigT Q =>
+      let (xp,q) := H in
+        (let (x,p)
+          as s return (Q s -> {x0 : A & {p : P x0 & Q (existT _ x0 p)}})
+            := xp in fun q' =>
+              (existT _ x (existT (fun p0 => Q (existT P x p0)) p q'))) q).
+  intros [[x p] q]. auto.
+  intros [x [p q]]. auto.
+Defined.
+
 (** André Joyal suggested the following definition of equivalences,
    and to call it "h-isomorphism". *)
 
