@@ -238,6 +238,19 @@ Section ReflectiveSubcategory.
 
   End ExponentialIdeal.
 
+  Definition reflect_functor2 {X Y Z}
+    : (X -> Y -> Z) -> (reflect X -> reflect Y -> reflect Z).
+  Proof.
+    intros f rx.
+    apply @reflect_factor with (X := X).
+    apply exp_in_rsc. intros; apply reflect_in_rsc.
+    intros x ry.
+    apply @reflect_factor with (X := Y).
+    apply reflect_in_rsc.
+    intros y.
+    apply map_to_reflect, f; auto. auto. auto.
+  Defined.
+
   (* As a consequence of the foregoing, the reflector preserves finite
      products. *)
   Section PreservesProducts.
@@ -273,5 +286,71 @@ Section ReflectiveSubcategory.
     Admitted.
     
   End PreservesProducts.
+
+  (* Semantically, so far what we have is a "reflective subfibration"
+     of the codomain fibration of the (oo,1)-category of types.  In
+     other words, each slice category H/x has a reflective subcategory
+     R^x, and the pullback functors preserve the R's and commute with
+     the reflectors.
+
+     We want all of this data to be entirely determined by an ordinary
+     reflective subcategory of H itself.  We first impose an axiom
+     which is equivalent to saying that if M is the class of morphisms
+     that are the objects of the categories R^x, then M is the right
+     class of a factorization system.
+     *)
+
+  Hypothesis sum_in_rsc : forall X (P : X -> Type),
+    in_rsc X -> (forall x, in_rsc (P x)) -> in_rsc (sigT P).
+
+  (* This allows us to generalize the factorization and functoriality
+     properties to the dependent context. *)
+
+  Section DependentFactor.
+
+    Hypothesis X : Type.
+    Hypothesis P : reflect X -> Type.
+    Hypothesis Pr : forall x, in_rsc (P x).
+    Hypothesis f : forall x, P (map_to_reflect X x).
+
+    Let rfdepmap : reflect X -> sigT P.
+    Proof.
+      intros x.
+      apply (inverse (in_rsc_reflect_equiv (sigT P)
+        (sum_in_rsc _ P (reflect_in_rsc X) Pr))).
+      generalize dependent x.
+      apply reflect_functor.
+      intros x. exists (map_to_reflect X x). exact (f x).
+    Defined.
+
+    Definition reflect_factor_dep : (forall rx, P rx).
+    Proof.
+      intros rx.
+      assert (p : pr1 (rfdepmap rx) ~~> rx).
+      unfold rfdepmap.
+      path_via (inverse (in_rsc_reflect_equiv (reflect X) (reflect_in_rsc X))
+        (reflect_functor pr1
+          (reflect_functor (fun x : X => tpair (map_to_reflect X x) (f x)) rx))).
+      admit.                    (* naturality, inverted. *)
+      equiv_moveright.
+      path_via (reflect_functor
+        (pr1 ○ (fun x : X => tpair (map_to_reflect X x) (f x))) rx).
+      admit.                    (* functoriality *)
+      path_via (reflect_functor (map_to_reflect X) rx).
+      admit.                    (* well-pointedness *)
+      apply (transport p).
+      exact (pr2 (rfdepmap rx)).
+    Defined.
+
+  End DependentFactor.
+  
+  Definition reflect_functor_dep {X} {P : reflect X -> Type}
+    : (forall x, P (map_to_reflect X x)) -> (forall rx, reflect (P rx)).
+  Proof.
+    intros f.
+    apply reflect_factor_dep with (X := X).
+    intros rx; apply reflect_in_rsc.
+    intros x; apply map_to_reflect; auto.
+  Defined.
 
 End ReflectiveSubcategory.
