@@ -41,6 +41,44 @@ Section ReflectiveSubcategory.
     exact (compose (map_to_reflect _) f).
   Defined.
 
+  Definition reflect_factoriality1 {X Y Z} (Yr : in_rsc Y) (Zr : in_rsc Z)
+    (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
+    g (reflect_factor Yr f rx) ~~> reflect_factor Zr (g ○ f) rx.
+  Proof.
+    unfold reflect_factor.
+    path_via ((g ○ ((reflection_equiv X Y Yr ⁻¹) f)) rx).
+    apply happly.
+    apply equiv_injective with (w := reflection_equiv X Z Zr).
+    cancel_inverses.
+    path_via ((g ○ (reflection_equiv X Y Yr ⁻¹) f) ○ map_to_reflect X).
+    path_via (g ○ ((reflection_equiv X Y Yr ⁻¹) f ○ map_to_reflect X)).
+    path_via (reflection_equiv X Y Yr ((reflection_equiv X Y Yr ⁻¹) f)).
+    cancel_inverses.
+  Defined.
+
+  Definition reflect_factoriality2 {X Y Z} (Zr : in_rsc Z)
+    (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
+    reflect_factor Zr g (reflect_functor f rx) ~~> reflect_factor Zr (g ○ f) rx.
+  Proof.
+    path_via ((reflection_equiv X Z Zr ⁻¹)
+      (reflect_factor Zr g ○ (map_to_reflect Y ○ f)) rx).
+    unfold reflect_functor, reflect_factor.
+    apply reflect_factoriality1.
+    apply happly.
+    apply @map.
+    path_via ((reflect_factor Zr g ○ map_to_reflect Y) ○ f).
+    apply @map with (f := fun g' => g' ○ f).
+    unfold reflect_factor.
+    path_via (reflection_equiv Y Z Zr ((reflection_equiv Y Z Zr ⁻¹) g)).
+    cancel_inverses.
+  Defined.
+
+  Definition reflect_functoriality {X Y Z} (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
+    reflect_functor g (reflect_functor f rx) ~~> reflect_functor (g ○ f) rx.
+  Proof.
+    apply @reflect_factoriality2 with (Z := reflect Z) (Zr := reflect_in_rsc Z).
+  Defined.
+
   (* The unit of the reflection is a natural transformation. *)
   Definition reflect_naturality {X Y} (f : X -> Y) (x:X) :
     reflect_functor f (map_to_reflect X x) ~~> map_to_reflect Y (f x).
@@ -53,6 +91,17 @@ Section ReflectiveSubcategory.
     apply (happly p).
   Defined.
 
+  (* The reflector is a well-pointed endofunctor. *)
+  Definition reflect_wellpointed {X} (rx : reflect X) :
+    reflect_functor (map_to_reflect X) rx ~~> map_to_reflect (reflect X) rx.
+  Proof.
+    apply happly.
+    apply equiv_injective with
+      (w := reflection_equiv X (reflect (reflect X)) (reflect_in_rsc (reflect X))).
+    apply funext. intros x.
+    apply @reflect_naturality with (f := map_to_reflect X) (x := x).
+  Defined.
+    
   (* If the unit at X is an equivalence, then X is in the subcategory. *)
   Lemma reflect_equiv_in_rsc X : is_equiv (map_to_reflect X) -> in_rsc X.
     intros H.
@@ -101,6 +150,20 @@ Section ReflectiveSubcategory.
     exact (happly p y).
     intros x.
     exact (happly (inverse_is_section (reflection_equiv X X H) (@id X)) x).
+  Defined.
+
+  Definition reflect_inverse_naturality {X Y} (Xr : in_rsc X) (Yr : in_rsc Y)
+    (f : X -> Y) (rx : reflect X) :
+    f (inverse (in_rsc_reflect_equiv X Xr) rx) ~~>
+    (inverse (in_rsc_reflect_equiv Y Yr) (reflect_functor f rx)).
+  Proof.
+    equiv_moveleft.
+    path_via (reflect_functor f
+      (in_rsc_reflect_equiv X Xr
+        (inverse (in_rsc_reflect_equiv X Xr) rx))).
+    apply opposite.
+    apply @reflect_naturality.
+    cancel_inverses.
   Defined.
 
   (* The terminal object is in the subcategory. *)
@@ -331,13 +394,13 @@ Section ReflectiveSubcategory.
       path_via (inverse (in_rsc_reflect_equiv (reflect X) (reflect_in_rsc X))
         (reflect_functor pr1
           (reflect_functor (fun x : X => tpair (map_to_reflect X x) (f x)) rx))).
-      admit.                    (* naturality, inverted. *)
+      apply reflect_inverse_naturality.
       equiv_moveright.
       path_via (reflect_functor
         (pr1 ○ (fun x : X => tpair (map_to_reflect X x) (f x))) rx).
-      admit.                    (* functoriality *)
+      apply reflect_functoriality.
       path_via (reflect_functor (map_to_reflect X) rx).
-      admit.                    (* well-pointedness *)
+      apply @reflect_wellpointed with (X := X).
       apply (transport p).
       exact (pr2 (rfdepmap rx)).
     Defined.
