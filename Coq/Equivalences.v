@@ -534,7 +534,99 @@ Proof.
   simpl.
   apply total_path_reconstruction.
 Defined.
+
+(** The homotopy fiber of a fibration is equivalent to the actual fiber. *)
+
+Section hfiber_fibration.
+
+  Hypothesis X:Type.
+  Hypothesis P : X -> Type.
+
+  Let hfiber_fibration_map (x : X) : { z : sigT P & pr1 z ~~> x } -> P x.
+  Proof.
+    intros x [z p].
+    apply (transport p).
+    exact (pr2 z).
+  Defined.
+
+  Let hfiber_fibration_map_path (x : X) (z : sigT P) (p : pr1 z ~~> x) :
+    (tpair x (hfiber_fibration_map x (tpair z p))) ~~> z.
+  Proof.
+    intros x z p.
+    apply total_path with (p := !p).
+    destruct z as [x' y']. simpl.
+    path_via (transport (p @ !p) y').
+    apply opposite, trans_concat.
+    path_via (transport (idpath _) y').
+    apply map with (f := fun q => transport q y').
+    cancel_opposites.
+  Defined.
+
+  Definition hfiber_fibration (x : X) :
+    equiv (P x) { z : sigT P & pr1 z ~~> x }.
+  Proof.
+    intros x.
+    exists (fun y: P x => ((tpair (tpair x y) (idpath _))
+      : {z : sigT P & pr1 z ~~> x})).
+    apply hequiv_is_equiv with (g := hfiber_fibration_map x).
+    intros [z p].
+    apply total_path with (p := hfiber_fibration_map_path x z p). simpl.
+    path_via (transport (P := fun x' => x' ~~> x)
+      (map pr1 (hfiber_fibration_map_path x z p))
+      (idpath x)).
+    apply @map_trans with (P := fun x' => x' ~~> x).
+    unfold hfiber_fibration_map_path.
+    path_via (transport (P := fun x' => x' ~~> x) (!p) (idpath x)).
+    apply map with (f := fun r => transport (P := fun x' => x' ~~> x) r (idpath x)).
+    apply @base_total_path with
+      (x := (tpair x (hfiber_fibration_map x (tpair z p)))).
+    path_via ((!!p) @ idpath x).
+    apply trans_is_concat_opp.
+    cancel_units.
+    intros y.
+    unfold hfiber_fibration_map. simpl. auto.
+  Defined.
+
+End hfiber_fibration.
+
+  (* Replacement of a map by an equivalent fibration. *)
+Section FibrationReplacement.
+
+  Hypothesis A B : Type.
+  Hypothesis f : A -> B.
   
+  Definition fibration_replacement (x:A) : {y:B & {x:A & f x ~~> y}} :=
+    (tpair (f x) (tpair x (idpath (f x)))).
+
+  Definition fibration_replacement_equiv : equiv A {y:B & {x:A & f x ~~> y}}.
+  Proof.
+    exists fibration_replacement.
+    apply hequiv_is_equiv with
+      (g := fun yxp => match yxp with
+                         existT y (existT x p) => x
+                       end).
+    intros [y [x p]].
+    unfold fibration_replacement.
+    apply total_path with (p := p). simpl.
+    path_via (existT (fun x' => f x' ~~> y) x (idpath (f x) @ p)).
+    path_via (existT (fun x' => f x' ~~> y) x (transport p (idpath (f x)))).
+    apply opposite.
+    apply @trans_map with
+      (P := fun y' => f x ~~> y')
+      (Q := fun y' => {x':A & f x' ~~> y'})
+      (f := fun y' q => existT (fun x' => f x' ~~> y') x q).
+    apply trans_is_concat.
+    intros x. auto.
+  Defined.
+
+  Definition fibration_replacement_factors (x:A) :
+    pr1 (fibration_replacement_equiv x) ~~> f x.
+  Proof.
+    auto.
+  Defined.
+
+End FibrationReplacement.
+
 (** André Joyal suggested the following definition of equivalences,
    and to call it "h-isomorphism". *)
 
