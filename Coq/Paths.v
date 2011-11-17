@@ -292,15 +292,15 @@ Definition happly_dep {A} {P : A -> Type} {f g : forall x, P x} :
 (** How happly interacts with map. *)
 
 Lemma map_precompose {A B C} (f : B -> C) (g : B -> C) (h : A -> B)
-  (p : f ~~> g) (a : A) :
-  happly (map (fun f' => f' ○ h) p) a ~~> happly p (h a).
+  (p : f == g) (a : A) :
+  happly (map (fun f' => f' o h) p) a == happly p (h a).
 Proof.
   path_induction.
 Defined.
 
 Lemma map_postcompose {A B C} (f : A -> B) (g : A -> B) (h : B -> C)
-  (p : f ~~> g) (a : A) :
-  happly (map (fun f' => h ○ f') p) a ~~> map h (happly p a).
+  (p : f == g) (a : A) :
+  happly (map (fun f' => h o f') p) a == map h (happly p a).
 Proof.
   path_induction.
 Defined.
@@ -308,7 +308,7 @@ Defined.
 (** Paths in cartesian products. *)
 
 Definition prod_path {X Y} (x x' : X) (y y' : Y) :
-  (x ~~> x') -> (y ~~> y') -> ((x,y) ~~> (x',y')).
+  (x == x') -> (y == y') -> ((x,y) == (x',y')).
 Proof.
   path_induction.
 Defined.

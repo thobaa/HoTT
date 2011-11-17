@@ -538,15 +538,15 @@ Section hfiber_fibration.
   Hypothesis X:Type.
   Hypothesis P : X -> Type.
 
-  Let hfiber_fibration_map (x : X) : { z : sigT P & pr1 z ~~> x } -> P x.
+  Let hfiber_fibration_map (x : X) : { z : sigT P & pr1 z == x } -> P x.
   Proof.
     intros x [z p].
     apply (transport p).
     exact (pr2 z).
   Defined.
 
-  Let hfiber_fibration_map_path (x : X) (z : sigT P) (p : pr1 z ~~> x) :
-    (tpair x (hfiber_fibration_map x (tpair z p))) ~~> z.
+  Let hfiber_fibration_map_path (x : X) (z : sigT P) (p : pr1 z == x) :
+    (x ; hfiber_fibration_map x (z ; p)) == z.
   Proof.
     intros x z p.
     apply total_path with (p := !p).
@@ -559,23 +559,23 @@ Section hfiber_fibration.
   Defined.
 
   Definition hfiber_fibration (x : X) :
-    equiv (P x) { z : sigT P & pr1 z ~~> x }.
+    equiv (P x) { z : sigT P & pr1 z == x }.
   Proof.
     intros x.
-    exists (fun y: P x => ((tpair (tpair x y) (idpath _))
-      : {z : sigT P & pr1 z ~~> x})).
+    exists (fun y: P x => (((x ; y) ; idpath _)
+      : {z : sigT P & pr1 z == x})).
     apply hequiv_is_equiv with (g := hfiber_fibration_map x).
     intros [z p].
     apply total_path with (p := hfiber_fibration_map_path x z p). simpl.
-    path_via (transport (P := fun x' => x' ~~> x)
+    path_via (transport (P := fun x' => x' == x)
       (map pr1 (hfiber_fibration_map_path x z p))
       (idpath x)).
-    apply @map_trans with (P := fun x' => x' ~~> x).
+    apply @map_trans with (P := fun x' => x' == x).
     unfold hfiber_fibration_map_path.
-    path_via (transport (P := fun x' => x' ~~> x) (!p) (idpath x)).
-    apply map with (f := fun r => transport (P := fun x' => x' ~~> x) r (idpath x)).
+    path_via (transport (P := fun x' => x' == x) (!p) (idpath x)).
+    apply map with (f := fun r => transport (P := fun x' => x' == x) r (idpath x)).
     apply @base_total_path with
-      (x := (tpair x (hfiber_fibration_map x (tpair z p)))).
+      (x := (x ; hfiber_fibration_map x (z ; p))).
     path_via ((!!p) @ idpath x).
     apply trans_is_concat_opp.
     cancel_units.
@@ -591,10 +591,10 @@ Section FibrationReplacement.
   Hypothesis A B : Type.
   Hypothesis f : A -> B.
   
-  Definition fibration_replacement (x:A) : {y:B & {x:A & f x ~~> y}} :=
-    (tpair (f x) (tpair x (idpath (f x)))).
+  Definition fibration_replacement (x:A) : {y:B & {x:A & f x == y}} :=
+    (f x ; (x ; idpath (f x))).
 
-  Definition fibration_replacement_equiv : equiv A {y:B & {x:A & f x ~~> y}}.
+  Definition fibration_replacement_equiv : equiv A {y:B & {x:A & f x == y}}.
   Proof.
     exists fibration_replacement.
     apply hequiv_is_equiv with
@@ -604,19 +604,19 @@ Section FibrationReplacement.
     intros [y [x p]].
     unfold fibration_replacement.
     apply total_path with (p := p). simpl.
-    path_via (existT (fun x' => f x' ~~> y) x (idpath (f x) @ p)).
-    path_via (existT (fun x' => f x' ~~> y) x (transport p (idpath (f x)))).
+    path_via (existT (fun x' => f x' == y) x (idpath (f x) @ p)).
+    path_via (existT (fun x' => f x' == y) x (transport p (idpath (f x)))).
     apply opposite.
     apply @trans_map with
-      (P := fun y' => f x ~~> y')
-      (Q := fun y' => {x':A & f x' ~~> y'})
-      (f := fun y' q => existT (fun x' => f x' ~~> y') x q).
+      (P := fun y' => f x == y')
+      (Q := fun y' => {x':A & f x' == y'})
+      (f := fun y' q => existT (fun x' => f x' == y') x q).
     apply trans_is_concat.
     intros x. auto.
   Defined.
 
   Definition fibration_replacement_factors (x:A) :
-    pr1 (fibration_replacement_equiv x) ~~> f x.
+    pr1 (fibration_replacement_equiv x) == f x.
   Proof.
     auto.
   Defined.
@@ -652,18 +652,18 @@ Section FiberFibers.
 
   Hypothesis z : Z.
 
-  Definition composite_fiber_map : {x:X & (g ○ f) x ~~> z} -> {y:Y & g y ~~> z}.
+  Definition composite_fiber_map : {x:X & (g o f) x == z} -> {y:Y & g y == z}.
   Proof.
     intros [x p].
     exists (f x).
     exact p.
   Defined.
 
-  Hypothesis yq : {y:Y & g y ~~> z}.
+  Hypothesis yq : {y:Y & g y == z}.
 
-  Let fibfib := {xp : {x:X & (g ○ f) x ~~> z } & composite_fiber_map xp ~~> yq }.
+  Let fibfib := {xp : {x:X & (g o f) x == z } & composite_fiber_map xp == yq }.
 
-  Let fibf := {x:X & f x ~~> pr1 yq}.
+  Let fibf := {x:X & f x == pr1 yq}.
 
   Let fib1 : fibfib -> fibf.
   Proof.
@@ -675,12 +675,12 @@ Section FiberFibers.
   Let fib2 : fibf -> fibfib.
   Proof.
     intros [x r].
-    exists (existT (fun x => g (f x) ~~> z) x (map g r @ pr2 yq)).
+    exists (existT (fun x => g (f x) == z) x (map g r @ pr2 yq)).
     simpl.
     apply total_path with (p := r).
     simpl.
-    path_via (transport (P := fun z' => z' ~~> z) (map g r) (map g r @ pr2 yq)).
-    apply map_trans with (P := fun z' => z' ~~> z).
+    path_via (transport (P := fun z' => z' == z) (map g r) (map g r @ pr2 yq)).
+    apply map_trans with (P := fun z' => z' == z).
     path_via (!(map g r) @ (map g r @ pr2 yq)).
     apply trans_is_concat_opp.
     cancel_opposites.
