@@ -898,9 +898,15 @@ Section ReflectiveSubcategory.
 
   End EMFactor.
 
-  (* Now we want to ensure that the factorization system is determined
+  (* The following axiom ensures that the factorization system is determined
      by the underlying reflective subcategory, i.e. that it is a
-     "reflective factorization system".  We probably need a new axiom
-     for this as well, but I haven't formulated it yet. *)
+     "reflective factorization system". *)
+
+  Hypothesis rsc_reflective_fs : forall X Y (f : X -> Y) (y : Y),
+    is_contr (reflect X) -> is_contr (reflect Y) -> is_contr (reflect {x:X & f x ~~> y}).
+
+  Definition E_three_for_two {X Y Z} (f : X -> Y) (g : Y -> Z) :
+    in_E g -> in_E (g ○ f) -> in_E f.
+  Proof. Admitted.
 
 End ReflectiveSubcategory.
