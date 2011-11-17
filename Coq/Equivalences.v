@@ -646,6 +646,63 @@ Proof.
   intros [x [p q]]. auto.
 Defined.
 
+(** The fiber of a map between fibers (the "unstable octahedral axiom"). *)
+
+Section FiberFibers.
+
+  Hypothesis X Y Z : Type.
+  Hypothesis f : X -> Y.
+  Hypothesis g : Y -> Z.
+
+  Hypothesis z : Z.
+
+  Definition composite_fiber_map : {x:X & (g ○ f) x ~~> z} -> {y:Y & g y ~~> z}.
+  Proof.
+    intros [x p].
+    exists (f x).
+    exact p.
+  Defined.
+
+  Hypothesis yq : {y:Y & g y ~~> z}.
+
+  Let fibfib := {xp : {x:X & (g ○ f) x ~~> z } & composite_fiber_map xp ~~> yq }.
+
+  Let fibf := {x:X & f x ~~> pr1 yq}.
+
+  Let fib1 : fibfib -> fibf.
+  Proof.
+    intros [[x p] r].
+    exists x.
+    exact (base_path r).
+  Defined.
+
+  Let fib2 : fibf -> fibfib.
+  Proof.
+    intros [x r].
+    exists (existT (fun x => g (f x) ~~> z) x (map g r @ pr2 yq)).
+    simpl.
+    apply total_path with (p := r).
+    simpl.
+    path_via (transport (P := fun z' => z' ~~> z) (map g r) (map g r @ pr2 yq)).
+    apply map_trans with (P := fun z' => z' ~~> z).
+    path_via (!(map g r) @ (map g r @ pr2 yq)).
+    apply trans_is_concat_opp.
+    cancel_opposites.
+  Defined.
+
+  Definition fiber_of_fiber : equiv fibfib fibf.
+  Proof.
+    exists fib1.
+    apply @hequiv_is_equiv with (g := fib2).
+    intros [x p].
+    apply total_path with (p := idpath x).
+    simpl.
+    destruct yq as [y q]. simpl.
+    simpl in p.
+  Admitted.
+  
+End FiberFibers.
+
 (** André Joyal suggested the following definition of equivalences,
    and to call it "h-isomorphism". *)
 
