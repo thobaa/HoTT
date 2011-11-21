@@ -223,7 +223,7 @@ Defined.
 
 (** Taking opposites of 1-paths is functorial on 2-paths. *)
 
-Definition opposite2 A {x y : A} (p q : x == y) (a : p == q) : (!p == !q).
+Definition opposite2 {A} {x y : A} {p q : x == y} (a : p == q) : (!p == !q).
 Proof.
   path_induction.
 Defined.
@@ -331,7 +331,7 @@ Hint Resolve
   @whisker_right @whisker_left
   @whisker_right_toid @whisker_right_fromid
   @whisker_left_toid @whisker_left_fromid
-  opposite2
+  @opposite2
   @map idpath_map concat_map idmap_map compose_map opposite_map
   @map2
  : path_hints.
