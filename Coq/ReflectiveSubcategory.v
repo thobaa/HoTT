@@ -70,6 +70,22 @@ Section ReflectiveSubcategory.
     exact (compose (map_to_reflect _) f).
   Defined.
 
+  Definition reflect_factor_functor {X Y} (f : X -> Y) (Yr : in_rsc Y) : 
+    map_to_reflect Y o reflect_factor Yr f == reflect_functor f.
+  Proof.
+    unfold reflect_functor, reflect_factor.
+    apply equiv_injective with
+      (w := reflection_equiv X (reflect Y) (reflect_in_rsc Y)).
+    simpl.
+    path_via (map_to_reflect Y o
+      (reflection_equiv X Y Yr ((reflection_equiv X Y Yr ^-1) f))).
+    cancel_inverses.
+    path_via (reflection_equiv X (reflect Y) (reflect_in_rsc Y)
+      ((reflection_equiv X (reflect Y) (reflect_in_rsc Y) ^-1)
+        (map_to_reflect Y o f))).
+    cancel_inverses.
+  Defined.
+
   Definition reflect_factoriality1 {X Y Z} (Yr : in_rsc Y) (Zr : in_rsc Z)
     (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
     g (reflect_factor Yr f rx) == reflect_factor Zr (g o f) rx.
@@ -94,7 +110,7 @@ Section ReflectiveSubcategory.
     unfold reflect_functor, reflect_factor.
     apply reflect_factoriality1.
     apply happly.
-    apply @map.
+    apply map.
     path_via ((reflect_factor Zr g o map_to_reflect Y) o f).
     apply @map with (f := fun g' => g' o f).
     unfold reflect_factor.
@@ -113,7 +129,7 @@ Section ReflectiveSubcategory.
   Proof.
     unfold reflect_functor.
     path_via (reflect_factor (reflect_in_rsc X) (@id (reflect X) o map_to_reflect X) rx).
-    apply @reflect_factor_unfactors.
+    apply reflect_factor_unfactors.
   Defined.
 
   (* The reflection is also a 2-functor. *)
@@ -262,6 +278,8 @@ Section ReflectiveSubcategory.
     intros x; induction x; auto.
   Defined.
 
+  Hint Resolve unit_in_rsc.
+
   (* The subcategory is closed under path spaces. *)
   Section PathSpaces.
 
@@ -385,6 +403,8 @@ Section ReflectiveSubcategory.
     Defined.
 
   End ExponentialIdeal.
+
+  Hint Resolve exp_in_rsc.
 
   (* This allows us to extend functoriality to multiple variables. *)
   Definition reflect_functor_twovar {X Y Z}
@@ -529,7 +549,7 @@ Section ReflectiveSubcategory.
 
     (* This proof is far too messy. *)
     Definition reflect_functor_fiberwise  :
-      equiv {x:X & reflect (P x)} (reflect (sigT P)).
+      {x:X & reflect (P x)} <~> (reflect (sigT P)).
     Proof.
       exists rf1.
       apply hequiv_is_equiv with (g := rf2).
@@ -640,6 +660,41 @@ Section ReflectiveSubcategory.
   Definition Emap_coerce_to_function X Y (f : Emap X Y) : (X -> Y) := projT1 f.
   Coercion Emap_coerce_to_function : Emap >-> Funclass.
 
+  (* Any equivalence is in E. *)
+  Definition equiv_in_E {X Y} (f : X -> Y) : is_equiv f -> in_E f.
+  Proof.
+    intros feq y.
+    apply contr_equiv_contr with unit.
+    apply @equiv_compose with (reflect unit).
+    apply in_rsc_reflect_equiv. auto.
+    apply reflect_functor_equiv.
+    apply equiv_inverse, contr_equiv_unit.
+    apply feq. auto.
+  Defined.
+
+  (* Likewise, any equivalence is in M. *)
+  Definition equiv_in_M {X Y} (f : X -> Y) : is_equiv f -> in_M f.
+  Proof.
+    intros feq y.
+    apply @transport with (P := in_rsc) (x := unit).
+    apply opposite, equiv_to_path, contr_equiv_unit, feq.
+    auto.
+  Defined.
+
+  (* Any map between objects in the subcategory is in M. *)
+  Definition map_in_rsc_in_M {X Y} (f : X -> Y) :
+    in_rsc X -> in_rsc Y -> in_M f.
+  Proof.
+    intros Xr Yr y.
+    auto.
+  Defined.
+
+  Definition map_in_rsc_Mmap {X Y} (f : X -> Y) (Xr : in_rsc X) (Yr : in_rsc Y)
+    : Mmap X Y
+    := (existT in_M f (map_in_rsc_in_M f Xr Yr)).
+
+  Hint Resolve @equiv_in_E @equiv_in_M @map_in_rsc_in_M.
+
   (* A map that is inverted by the reflector, and whose codomain is in
      the subcategory, belongs to E. *)
   Section InvertedInE.
@@ -734,6 +789,9 @@ Section ReflectiveSubcategory.
     apply (pr2 (idequiv _)).
   Defined.
 
+  Definition Emap_to_reflect X :=
+    existT in_E (map_to_reflect X) (map_to_reflect_in_E X).
+
   (* E and M are homotopy orthogonal to each other. *)
   Section EMOrth.
 
@@ -820,6 +878,124 @@ Section ReflectiveSubcategory.
 
   End EMOrth.
 
+  Implicit Arguments EMlift [X Y Z W].
+
+  (* Orthogonality lets us prove easily that E-maps are inverted by
+     the reflector. *)
+  Section EInverted.
+
+    Hypothesis (X Y:Type) (f : Emap X Y).
+
+    Let invert : reflect Y -> reflect X.
+    Proof.
+      apply @reflect_factor with (X:=Y). auto.
+      apply EMlift with (e := f)
+        (m := map_in_rsc_Mmap (reflect_functor f)
+          (reflect_in_rsc X) (reflect_in_rsc Y))
+        (f := map_to_reflect X) (g := map_to_reflect Y).
+      intros x.
+      path_via (reflect_functor f (map_to_reflect X x)).
+      apply reflect_naturality.
+    Defined.
+
+    Definition E_inverted : is_equiv (reflect_functor f).
+    Proof.
+      apply hequiv_is_equiv with invert.
+      apply reflect_factor_dep with (X := Y). auto.
+      intros y.
+      unfold invert.
+      path_via (reflect_functor f
+        (EMlift f
+           (map_in_rsc_Mmap (reflect_functor f) (reflect_in_rsc X)
+              (reflect_in_rsc Y)) (map_to_reflect X) 
+           (map_to_reflect Y)
+           (fun x : X =>
+            map (reflect_functor f) (map (map_to_reflect X) (idpath x)) @
+            reflect_naturality f x) y)).
+      apply reflect_factor_factors.
+      apply EMlift_lowertri with
+        (e := f)
+        (m := map_in_rsc_Mmap (reflect_functor f)
+          (reflect_in_rsc X) (reflect_in_rsc Y))
+        (f := map_to_reflect X) (g := map_to_reflect Y).
+      apply reflect_factor_dep with (X := X). auto.
+      intros x.
+      path_via (invert (map_to_reflect Y (f x))).
+      apply reflect_naturality.
+      unfold invert.
+      path_via ((EMlift f
+        (map_in_rsc_Mmap (reflect_functor f) (reflect_in_rsc X)
+           (reflect_in_rsc Y)) (map_to_reflect X) (map_to_reflect Y)
+        (fun x0 : X =>
+         map (reflect_functor f) (map (map_to_reflect X) (idpath x0)) @
+         reflect_naturality f x0)) (f x)).
+      apply reflect_factor_factors.
+      apply EMlift_uppertri.
+    Defined.
+
+    Definition invert_E : reflect X <~> reflect Y
+      := (reflect_functor f ; E_inverted).
+
+  End EInverted.
+
+  (* In particular, that means that given an E-map between any two
+     objects, one reflects to a point iff the other does. *)
+  Definition Emap_punctual_codomain {X Y} : Emap X Y ->
+    is_contr (reflect X) -> is_contr (reflect Y).
+  Proof.
+    intros f Xc.
+    apply contr_equiv_contr with (A := reflect X).
+    apply invert_E; auto.
+    auto.
+  Defined.
+
+  Definition Emap_punctual_domain {X Y} : Emap X Y ->
+    is_contr (reflect Y) -> is_contr (reflect X).
+  Proof.
+    intros f Yc.
+    apply contr_equiv_contr with (A := reflect Y).
+    apply equiv_inverse, invert_E; auto.
+    auto.
+  Defined.
+
+  (* Therefore, if f is in E, then so is the induced map from the
+     homotopy fiber of (g o f) to the homotopy fiber of g. *)
+  Definition fibermap_in_E {X Y Z} (f : Emap X Y) (g : Y -> Z) (z : Z) :
+    in_E (composite_fiber_map f g z).
+  Proof.
+    intros [y' p].
+    apply @contr_equiv_contr with (reflect {x:X & f x == y'}).
+    apply reflect_functor_equiv.
+    apply equiv_inverse, fiber_of_fibers.
+    apply (pr2 f).
+  Defined.
+
+  (* This lets us show that E-maps compose. *)
+  Definition Emap_compose {X Y Z} (f : Emap X Y) (g : Emap Y Z) :
+    Emap X Z.
+  Proof.
+    exists (g o f).
+    intros z.
+    apply @Emap_punctual_domain with
+      (Y := {y:Y & g y == z}).
+    exists (composite_fiber_map f g z).
+    apply fibermap_in_E.
+    apply (pr2 g).
+  Defined.
+
+  (* And cancel on one side. *)
+  Definition Emap_cancel_right {X Y Z} (f : Emap X Y) (g : Y -> Z) :
+    in_E (g o f) -> in_E g.
+  Proof.
+    intros gine.
+    intros z.
+    apply @Emap_punctual_codomain with
+      (X := {x:X & g (f x) == z}).
+    exists (composite_fiber_map f g z).
+    apply fibermap_in_E.
+    apply gine.
+  Defined.
+  
   (* Every morphism factors as an E followed by an M. *)
   Section EMFactor.
 
@@ -868,7 +1044,7 @@ Section ReflectiveSubcategory.
         (f := fun (y:Y) (r:f x == y) =>
           map_to_reflect {x0:X & f x0 == y} (x ; r)).
       apply equiv_to_path.
-      apply total_assoc with
+      apply total_assoc_sum with
         (P := fun x => f x == y)
         (Q := fun xp => map_to_reflect {x' : X & f x' == y} xp == rxp).
     Defined.
@@ -903,8 +1079,144 @@ Section ReflectiveSubcategory.
   Hypothesis rsc_reflective_fs : forall X Y (f : X -> Y) (y : Y),
     is_contr (reflect X) -> is_contr (reflect Y) -> is_contr (reflect {x:X & f x == y}).
 
-  Definition E_three_for_two {X Y Z} (f : X -> Y) (g : Y -> Z) :
-    in_E g -> in_E (g o f) -> in_E f.
-  Proof. Admitted.
+  (* The missing part of 2-out-of-3. *)
+  Definition Emap_cancel_left {X Y Z} (f : X -> Y) (g : Emap Y Z) :
+    in_E (g o f) -> in_E f.
+  Proof.
+    intros gfine y.
+    apply contr_equiv_contr with
+      (reflect {z : {x : X & g (f x) == g y} &
+        composite_fiber_map f g (g y) z == (y ; idpath (g y))}).
+    apply reflect_functor_equiv.
+    apply fiber_of_fibers.
+    apply rsc_reflective_fs.
+    apply gfine.
+    apply (pr2 g).
+  Defined.
+
+  (* Now we can finally show that any map inverted by the reflector is
+     in E. *)
+  Definition inverted_in_E {X Y} (f : X -> Y) :
+    is_equiv (reflect_functor f) -> in_E f.
+  Proof.
+    intros H.
+    apply Emap_cancel_left with (g := Emap_to_reflect Y).
+    apply @transport with
+      (P := fun g:X -> reflect Y => in_E g)
+      (x := (reflect_functor f) o (map_to_reflect X)).
+    apply funext. intros x.
+    path_via ((map_to_reflect Y o f) x).
+    apply reflect_naturality.
+    exact (pr2 (Emap_compose (Emap_to_reflect X)
+      ((reflect_functor f) ; equiv_in_E (reflect_functor f) H))).
+  Defined.
+  
+  (* The reflector preserves homotopy fibers. *)
+  Section ReflectFibers.
+
+    Hypotheses (X Y : Type) (f : X -> Y) (y:Y).
+
+    Let fibmap : Emap {x:X & f x == y}
+      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}.
+    Proof.
+      exists (square_fiber_map f (reflect_functor f)
+        (map_to_reflect X) (map_to_reflect Y)
+        (fun x => !reflect_naturality f x) y).
+      intros [rx p].
+      apply @transport with (P := fun T => is_contr (reflect T))
+        (x := {z : {x:X & map_to_reflect X x == rx} &
+          square_fiber_map (map_to_reflect X) (map_to_reflect Y)
+           f (reflect_functor f)
+           (fun x => !!reflect_naturality f x) rx z
+           == (existT
+             (fun y' => map_to_reflect Y y' == reflect_functor f rx)
+             y (!p))}).
+      apply opposite, equiv_to_path.
+      apply @transport with (y := p) (x := !(!p))
+        (P := fun q => {x : {x : X & f x == y} &
+          square_fiber_map f (reflect_functor f) (map_to_reflect X)
+          (map_to_reflect Y) (fun x0 : X => !reflect_naturality f x0) y x ==
+          (rx ; q)} <~>
+        {z : {x : X & map_to_reflect X x == rx} &
+          square_fiber_map (map_to_reflect X) (map_to_reflect Y) f
+          (reflect_functor f) (fun x : X => !(!reflect_naturality f x)) rx z ==
+          (y ; !p)}).
+      do_opposite_opposite.
+      apply three_by_three with
+        (f := f)
+        (g := reflect_functor f)
+        (h := map_to_reflect X)
+        (k := map_to_reflect Y)
+        (s := fun x => !reflect_naturality f x)
+        (b := y)
+        (c := rx)
+        (d := !p).
+      apply rsc_reflective_fs.
+      apply map_to_reflect_in_E.
+      apply map_to_reflect_in_E.
+    Defined.
+
+    Let tg_in_rsc : in_rsc {rx:reflect X &
+      reflect_functor f rx == map_to_reflect Y y}.
+    Proof.
+      auto.
+    Defined.
+
+    Let rfibmap : reflect{x:X & f x == y} ->
+      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}
+      := reflect_factor tg_in_rsc fibmap.
+
+    Definition reflect_preserves_fibers :
+      reflect {x:X & f x == y}
+      <~>
+      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}.
+    Proof.
+      exists rfibmap.
+      apply @equiv_cancel_left with
+        (C := reflect {rx:reflect X & reflect_functor f rx == map_to_reflect Y y})
+        (g := in_rsc_reflect_equiv
+          {rx:reflect X & reflect_functor f rx == map_to_reflect Y y} tg_in_rsc).
+      unfold rfibmap.
+      apply @transport with (P := is_equiv) (x := reflect_functor fibmap).
+      apply opposite.
+      path_via (map_to_reflect
+        {rx : reflect X & reflect_functor f rx == map_to_reflect Y y}
+        o reflect_factor tg_in_rsc fibmap).
+      apply reflect_factor_functor.
+      apply E_inverted.
+    Defined.
+    
+  End ReflectFibers.
+
+  (* How to escape from (reflect Type). *)
+
+  Definition escape (sA : reflect Type) : Type :=
+    { psA : reflect {A:Type & A} & reflect_functor pr1 psA == sA }.
+  
+  Theorem escape_in_rsc sA : in_rsc (escape sA).
+  Proof.
+    unfold escape. auto.
+  Defined.
+
+  Hint Resolve escape_in_rsc.
+
+  Theorem escape_is_reflect A : reflect A <~> escape (map_to_reflect Type A).
+  Proof.
+    apply @equiv_compose with (B := reflect {T:{B:Type & B} & pr1 T == A}).
+    apply reflect_functor_equiv.
+    apply hfiber_fibration with (X := Type) (P := fun T => T).
+    apply reflect_preserves_fibers.
+  Defined.
+
+  Theorem reflected_escape_is_reflect (sA : reflect Type) :
+    reflect_functor reflect sA == map_to_reflect Type (escape sA).
+  Proof.
+    generalize dependent sA.
+    apply reflect_factor_dep with (X := Type). auto.
+    intros A.
+    path_via (map_to_reflect Type (reflect A)).
+    apply reflect_naturality.
+    apply equiv_to_path, escape_is_reflect.
+  Defined.
 
 End ReflectiveSubcategory.
