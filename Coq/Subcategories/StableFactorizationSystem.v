@@ -19,9 +19,9 @@ Class factsys (in_rsc : Type -> Type) {is_rsf : rsf in_rsc} := {
 
 Section FactorizationSystem.
 
-  Hypothesis in_rsc : Type -> Type.
-  Hypothesis is_rsf : rsf in_rsc.
-  Hypothesis is_factsys : factsys in_rsc.
+  Context {in_rsc : Type -> Type}.
+  Context {is_rsf : rsf in_rsc}.
+  Context {is_factsys : factsys in_rsc}.
   Existing Instance is_rsf.
   Existing Instance is_factsys.
 
@@ -596,32 +596,3 @@ Section FactorizationSystem.
   End EMFactor.
 
 End FactorizationSystem.
-
-Implicit Arguments reflect_factor_dep [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments reflect_functor_dep [[in_rsc] [is_rsf] [is_factsys] [X]].
-Implicit Arguments reflect_functor_fiberwise [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments in_M [[in_rsc] [X] [Y]].
-Implicit Arguments in_E [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments Mmap [[in_rsc]].
-Implicit Arguments Emap [[in_rsc] [is_rsf]].
-Implicit Arguments equiv_in_E [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments equiv_in_M [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments map_in_rsc_in_M [[in_rsc] [is_rsf] [is_factsys] [X] [Y]].
-Implicit Arguments map_in_rsc_Mmap [[in_rsc] [is_rsf] [is_factsys] [X] [Y]].
-Implicit Arguments inverted_to_rsc_in_E [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments map_to_reflect_in_E [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments Emap_to_reflect [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments EMlift_tot [[in_rsc] [is_rsf]].
-Implicit Arguments EMlift [[in_rsc] [is_rsf]].
-Implicit Arguments EMlift_lowertri [[in_rsc] [is_rsf]].
-Implicit Arguments EMlift_uppertri_plus [[in_rsc] [is_rsf]].
-Implicit Arguments EMlift_uppertri [[in_rsc] [is_rsf]].
-Implicit Arguments EMlift_square [[in_rsc] [is_rsf]].
-Implicit Arguments E_inverted [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments invert_E [[in_rsc] [is_rsf] [is_factsys]].
-Implicit Arguments Emap_punctual_codomain [[in_rsc] [is_rsf] [is_factsys] [X] [Y]].
-Implicit Arguments Emap_punctual_domain [[in_rsc] [is_rsf] [is_factsys] [X] [Y]].
-Implicit Arguments fibermap_in_E [[in_rsc] [is_rsf] [X] [Y] [Z]].
-Implicit Arguments Emap_compose [[in_rsc] [is_rsf] [is_factsys] [X] [Y] [Z]].
-Implicit Arguments Emap_cancel_right [[in_rsc] [is_rsf] [is_factsys] [X] [Y] [Z]].
-Implicit Arguments EM_factor [[in_rsc] [is_rsf] [is_factsys]].

@@ -18,10 +18,10 @@ Class lexrsc (in_rsc : Type -> Type) {is_rsf : rsf in_rsc}
 
 Section LexReflective.
 
-  Hypothesis in_rsc : Type -> Type.
-  Hypothesis is_rsf : rsf in_rsc.
-  Hypothesis is_factsys : factsys in_rsc.
-  Hypothesis is_lexrsc : lexrsc in_rsc.
+  Context {in_rsc : Type -> Type}.
+  Context {is_rsf : rsf in_rsc}.
+  Context {is_factsys : factsys in_rsc}.
+  Context {is_lexrsc : lexrsc in_rsc}.
   Existing Instance is_rsf.
   Existing Instance is_factsys.
   Existing Instance is_lexrsc.
@@ -141,7 +141,3 @@ Section LexReflective.
      finite limits. *)
 
 End LexReflective.
-
-Implicit Arguments Emap_cancel_left [[in_rsc] [is_rsf] [is_factsys] [is_lexrsc] [X] [Y] [Z]].
-Implicit Arguments inverted_in_E [[in_rsc] [is_rsf] [is_factsys] [is_lexrsc] [X] [Y]].
-Implicit Arguments reflect_preserves_fibers [[in_rsc] [is_rsf] [is_factsys] [is_lexrsc]].

@@ -32,8 +32,8 @@ Class rsf (in_rsc : Type -> Type) := {
 (** Let's work in a section to simplify our hypotheses. *)
 Section ReflectiveSubfibration.
 
-  Hypothesis in_rsc : Type -> Type.
-  Hypothesis is_rsf : rsf (in_rsc).
+  Context {in_rsc : Type -> Type}.
+  Context {is_rsf : rsf (in_rsc)}.
   Existing Instance is_rsf.
 
   Hint Resolve reflect_in_rsc.
@@ -488,34 +488,3 @@ Section ReflectiveSubfibration.
   End PreservesProducts.
 
 End ReflectiveSubfibration.
-
-Implicit Arguments reflection_equiv [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_factor [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_factor_factors [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_factor_unfactors [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_factor_constant [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_functor [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_factor_functor [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_factoriality1 [[in_rsc] [is_rsf] [X] [Y] [Z]].
-Implicit Arguments reflect_factoriality2 [[in_rsc] [is_rsf] [X] [Y] [Z]].
-Implicit Arguments reflect_functoriality [[in_rsc] [is_rsf] [X] [Y] [Z]].
-Implicit Arguments reflect_functoriality_id [[in_rsc] [is_rsf] [X]].
-Implicit Arguments reflect_functor2 [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_preserves_equiv [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_functor_equiv [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_naturality [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments reflect_wellpointed [[in_rsc] [is_rsf] [X]].
-Implicit Arguments reflect_map_to_reflect_equiv [[in_rsc] [is_rsf] [X]].
-Implicit Arguments reflect_inverse_naturality [[in_rsc] [is_rsf] [X] [Y]].
-Implicit Arguments unit_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments path_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments prod_map_back [[in_rsc] [is_rsf]].
-Implicit Arguments prod_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments exp_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_functor_twovar [[in_rsc] [is_rsf] [X] [Y] [Z]].
-Implicit Arguments reflect_prod_cmp [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_prod_map_back [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_prod_pres [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_equiv_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments reflect_retract_in_rsc [[in_rsc] [is_rsf]].
-Implicit Arguments in_rsc_reflect_equiv [[in_rsc] [is_rsf]].
