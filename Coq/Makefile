@@ -19,7 +19,9 @@ VFILES:= Functions.v \
 	 Fibrations.v \
 	 Contractible.v \
 	 Equivalences.v \
+	 UsefulEquivalences.v \
 	 FiberEquivalences.v \
+	 FiberSequences.v \
 	 Funext.v \
          Univalence.v \
          UnivalenceImpliesFunext.v \
