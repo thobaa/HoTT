@@ -26,7 +26,7 @@ Section LexReflective.
   Existing Instance is_factsys.
   Existing Instance is_lexrsc.
 
-  Hint Resolve reflect_in_rsc unit_in_rsc path_in_rsc sum_in_rsc.
+  Hint Resolve reflect_in_rsc unit_in_rsc prod_in_rsc path_in_rsc exp_in_rsc sum_in_rsc.
 
   (** First, we prove the missing part of the 2-out-of-3 property for E-maps. *)
   Definition Emap_cancel_left {X Y Z} (f : X -> Y) (g : Emap Y Z) :

@@ -402,6 +402,8 @@ Section ReflectiveSubfibration.
 
   End Products.
 
+  Hint Resolve prod_in_rsc.
+
   (** The subcategory is a local exponential ideal.  This is a little
      surprising, since in general not every reflective subcategory has
      this property, but it follows because our reflective subcategory
@@ -450,41 +452,5 @@ Section ReflectiveSubfibration.
     intros y.
     apply map_to_reflect, f; auto. auto. auto.
   Defined.
-
-  (** As a consequence of the foregoing, the reflector preserves finite
-     products. *)
-  Section PreservesProducts.
-    
-    Hypotheses X Y : Type.
-
-    Definition reflect_prod_cmp (rxy : reflect (X * Y)) : reflect X * reflect Y
-      := (reflect_functor (@fst X Y) rxy, reflect_functor (@snd X Y) rxy).
-
-    Definition reflect_prod_map_back : reflect X * reflect Y -> reflect (X * Y).
-    Proof.
-      intros [rx ry].
-      generalize dependent ry.
-      apply @reflect_factor with (X := X).
-      apply exp_in_rsc.
-      intros; apply reflect_in_rsc.
-      intros x ry.
-      apply @reflect_factor with (X := Y).
-      apply reflect_in_rsc.
-      intros y.
-      apply map_to_reflect.
-      exact ((x,y)).
-      assumption. assumption.
-    Defined.
-
-    Definition reflect_prod_pres : is_equiv reflect_prod_cmp.
-    Proof.
-      apply hequiv_is_equiv with (g := reflect_prod_map_back).
-      intros [rx ry].
-      unfold reflect_prod_cmp, reflect_prod_map_back.
-      apply prod_path.
-      (* To be completed... *)
-    Admitted.
-    
-  End PreservesProducts.
 
 End ReflectiveSubfibration.
