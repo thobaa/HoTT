@@ -35,16 +35,6 @@ Proof.
   intros f; apply funext; intros x; apply Yp.
 Defined.
 
-Definition sum_prop_is_prop X (P : X -> Type) :
-  is_prop X -> (forall x, is_prop (P x)) -> is_prop (sigT P).
-Proof.
-  intros Xp Pp.
-  apply allpath_prop.
-  intros [x p] [y q].
-  apply total_path with (prop_path Xp x y).
-  apply prop_path, Pp.
-Defined.
-
 Instance prop_is_factsys : factsys is_prop := {
-  sum_in_rsc := sum_prop_is_prop
+  sum_in_rsc := sum_isprop
 }.

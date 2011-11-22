@@ -270,6 +270,12 @@ Proof.
   path_induction.
 Defined.
 
+Lemma constmap_map (A B:Type) (b:B) (x y:A) (p: x==y) :
+  map (fun _=>b) p == idpath b.
+Proof.
+  path_induction.
+Defined.
+
 (** We can also map paths between paths. *)
 
 Definition map2 {A B} {x y : A} {p q : x == y} (f : A -> B) :

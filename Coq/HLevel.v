@@ -122,6 +122,13 @@ Defined.
 
 Definition isprop_isprop {A} : is_prop (is_prop A) := hlevel_isprop.
 
+Definition iscontr_isprop A : is_prop (is_contr A).
+Proof.
+  intros A.
+  apply inhabited_contr_isprop.
+  apply contr_contr.
+Defined.
+
 Theorem prop_equiv_inhabited_contr {A} : is_prop A <~> (A -> is_contr A).
 Proof.
   intros A.
@@ -186,6 +193,39 @@ Proof.
   apply H.
 Defined.
   
+(** Props are closed under sums (with prop base) and arbitrary
+   dependent products. *)
+
+Definition sum_isprop X (P : X -> Type) :
+  is_prop X -> (forall x, is_prop (P x)) -> is_prop (sigT P).
+Proof.
+  intros X P Xp Pp.
+  apply allpath_prop.
+  intros [x p] [y q].
+  apply total_path with (prop_path Xp x y).
+  apply prop_path, Pp.
+Defined.
+
+Definition forall_isprop {X} (P : X -> Type) :
+  (forall x, is_prop (P x)) -> is_prop (forall x, P x).
+Proof.
+  intros X P H.
+  apply allpath_prop.
+  intros f g.
+  apply funext_dep. intros x.
+  apply prop_path.
+  apply H.
+Defined.
+
+(** Being an equivalence is a prop. *)
+
+Definition is_equiv_is_prop {X Y} (f: X -> Y) : is_prop (is_equiv f).
+Proof.
+  intros X Y f.
+  apply forall_isprop. intros y.
+  apply iscontr_isprop.
+Defined.
+
 (** Sets are of h-level 2. *)
 
 Definition is_set := is_hlevel 2.

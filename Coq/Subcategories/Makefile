@@ -13,7 +13,7 @@ COQDOC:=$(COQBIN)coqdoc
 # The list of files that comprise the library in the order in which
 # they should appear in the generated documentation.
 
-VFILES:= ReflectiveSubfibration.v StableFactorizationSystem.v LexReflectiveSubcategory.v EpiMono.v LocalSubfibration.v
+VFILES:= ReflectiveSubfibration.v StableFactorizationSystem.v LexReflectiveSubcategory.v EpiMono.v LocalSubfibration.v OpenSubtopos.v
 
 VOFILES:=$(VFILES:.v=.vo)
 GLOBFILES:=$(VFILES:.v=.glob)
