@@ -453,4 +453,141 @@ Section ReflectiveSubfibration.
     apply map_to_reflect, f; auto. auto. auto.
   Defined.
 
+  (** And to prove that the reflector preserves finite products. *)
+  Section PreservesProducts.
+
+    Hypotheses A B : Type.
+
+    (* We show that maps [reflect A * reflect B -> C], for [C] in the
+       subcategory, are equivalent to maps [A * B -> C].  By the
+       Yoneda lemma, this allows us to construct an equivalence
+       between [reflect A * reflect B] and [reflect (A*B)].
+
+       However, for this to work we have to know that the first
+       equivalence is natural in C.  Since the equivalence is a
+       composite of a sequence of equivalences, it is easiest to carry
+       through the naturality one step at a time as we construct it.
+       We also want to know that this equivalence is actually given by
+       composing with the maps [A -> reflect A] and [B -> reflect B],
+       so we carry that through as well.  Hence the rather unwieldy
+       type of the following lemma.
+       *)
+
+    Let refeq_twovar_all :
+      { e : forall C (Cr : in_rsc C), (reflect A * reflect B -> C) <~> (A * B -> C) &
+        ((forall C Cr f a b, e C Cr f (a,b) == f (map_to_reflect A a, map_to_reflect B b)) *
+        (forall C Cr D Dr f (g:C->D), g o (e C Cr f) == e D Dr (g o f)))%type }.
+    Proof.
+    (* reflect A -> reflect B -> C *)
+      set (e1 := fun C => curry_equiv (reflect A) (reflect B) C).
+      assert (v1 : forall C f ra rb, e1 C f ra rb == f (ra,rb)).
+      intros; simpl; auto.
+      assert (n1 : forall C D f (g:C->D), (fun a => g o ((e1 C f) a)) == e1 D (g o f)).
+      intros; simpl; auto.
+      (* A -> reflect B -> C *)
+      set (e2 := fun C (Cr:in_rsc C) => reflection_equiv A (reflect B -> C)
+        (exp_in_rsc _ _ (fun _ => Cr))).
+      assert (v2 : forall C Cr f a rb, e2 C Cr f a rb == f (map_to_reflect A a) rb).
+      intros; simpl; auto.
+      assert (n2 : forall C Cr D Dr f (g:C->D), (fun a => g o ((e2 C Cr f) a)) == e2 D Dr (fun ra => g o (f ra))).
+      intros; simpl; auto.
+      (* reflect B -> A -> C *)
+      set (e3 := fun C => arg_comm_equiv A (reflect B) C).
+      assert (v3 : forall C f a rb, e3 C f rb a == f a rb).
+      intros; simpl; auto.
+      assert (n3 : forall C D f (g:C->D), (fun a => g o ((e3 C f) a)) == e3 D (fun a => g o (f a))).
+      intros; simpl; auto.
+      (* B -> A -> C *)
+      set (e4 := fun C (Cr:in_rsc C) => reflection_equiv B (A -> C)
+        (exp_in_rsc _ _ (fun _ => Cr))).
+      assert (v4 : forall C Cr f b a, e4 C Cr f b a == f (map_to_reflect B b) a).
+      intros; simpl; auto.
+      assert (n4 : forall C Cr D Dr f (g:C->D), (fun b => g o ((e4 C Cr f) b)) == e4 D Dr (fun rb => g o (f rb))).
+      intros; simpl; auto.
+      (* A -> B -> C *)
+      set (e5 := fun C => arg_comm_equiv B A C).
+      assert (v5 : forall C f a b, e5 C f a b == f b a).
+      intros; simpl; auto.
+      assert (n5 : forall C D f (g:C->D), (fun a => g o ((e5 C f) a)) == e5 D (fun a => g o (f a))).
+      intros; simpl; auto.
+      (* A * B -> C *)
+      set (e6 := fun C => equiv_inverse (curry_equiv A B C)).
+      assert (v6 : forall C f a b, e6 C f (a,b) == f a b).
+      intros; simpl; auto.
+      assert (n6 : forall C D f (g:C->D), g o (e6 C f) == e6 D (fun a => (g o (f a)))).
+      intros; simpl; auto.
+      exists (fun C Cr =>
+        (equiv_compose (e1 C)
+          (equiv_compose (e2 C Cr)
+            (equiv_compose (e3 C)
+              (equiv_compose (e4 C Cr)
+                (equiv_compose (e5 C) (e6 C))))))).
+      split; intros.
+      path_via (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))) (a,b)).
+      path_via (g o (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))))).
+    Defined.
+
+    Definition reflection_equiv_twovar := pr1 refeq_twovar_all.
+    Let refeq_twovar_eval := fst (pr2 refeq_twovar_all).
+    Let refeq_twovar_natural := snd (pr2 refeq_twovar_all).
+
+    Definition reflect_factor_twovar {C} (Cr : in_rsc C) :
+      (A * B -> C) -> (reflect A * reflect B -> C)
+      := reflection_equiv_twovar C Cr ^-1.
+
+    Definition reflect_factoriality1_twovar {C D} (Cr : in_rsc C) (Dr : in_rsc D)
+      (f : A * B -> C) (g : C -> D) :
+      g o reflect_factor_twovar Cr f == reflect_factor_twovar Dr (g o f).
+    Proof.
+      unfold reflect_factor_twovar.
+      equiv_moveleft.
+      path_via (g o (reflection_equiv_twovar C Cr ((reflection_equiv_twovar C Cr ^-1) f))).
+      apply inverse_is_section.
+    Defined.
+
+    Definition reflect_product_equiv : reflect (A * B) <~> reflect A * reflect B.
+    Proof.
+      exists (reflect_factor
+        (prod_in_rsc (reflect A) (reflect B) (reflect_in_rsc A) (reflect_in_rsc B))
+        (fun ab => (map_to_reflect A (fst ab), map_to_reflect B (snd ab)))).
+      apply @hequiv_is_equiv with
+        (g := reflect_factor_twovar (reflect_in_rsc (A*B)) (map_to_reflect (A*B))).
+      apply happly.
+      path_via 
+      (reflect_factor_twovar (prod_in_rsc _ _ (reflect_in_rsc A) (reflect_in_rsc B))
+        ((reflect_factor (prod_in_rsc (reflect A) (reflect B) (reflect_in_rsc A)
+          (reflect_in_rsc B))
+        (fun ab : A * B =>
+          (map_to_reflect A (fst ab), map_to_reflect B (snd ab))))
+        o (map_to_reflect (A * B)))).
+      apply reflect_factoriality1_twovar.
+      unfold compose.
+      unfold reflect_factor_twovar.
+      equiv_moveright.
+      apply funext; intros [a b].
+      path_via (map_to_reflect A a, map_to_reflect B b).
+      path_via ((fun ab : A * B =>
+      (map_to_reflect A (fst ab), map_to_reflect B (snd ab))) (a,b)).
+      apply reflect_factor_factors with (x := (a,b)).
+      (* other direction *)
+      apply happly.
+      apply equiv_injective with
+        (w := reflection_equiv (A*B) (reflect (A*B)) (reflect_in_rsc (A*B))).
+      unfold reflection_equiv. simpl.
+      apply funext; intros [a b].
+      unfold compose; simpl.
+      path_via (reflect_factor_twovar (reflect_in_rsc (A * B)) (map_to_reflect (A * B))
+        ((fun ab : A * B =>
+         (map_to_reflect A (fst ab), map_to_reflect B (snd ab))) (a,b))).
+      apply reflect_factor_factors with (x := (a,b)).
+      simpl.
+      unfold reflect_factor_twovar.
+      path_via (reflection_equiv_twovar (reflect (A * B)) (reflect_in_rsc (A * B))
+        ((reflection_equiv_twovar (reflect (A * B)) (reflect_in_rsc (A * B)) ^-1)
+          (map_to_reflect (A * B))) (a,b)).
+      apply happly, inverse_is_section.
+    Defined.
+
+  End PreservesProducts.
+
 End ReflectiveSubfibration.
