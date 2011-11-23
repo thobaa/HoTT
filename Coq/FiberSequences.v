@@ -138,6 +138,58 @@ Section ThreeByThree.
 
 End ThreeByThree.
 
+(** A version for maps that are given as fibrations. *)
+
+Section ThreeByThreeFib.
+
+  Hypothesis A B : Type.
+  Hypothesis (P : A -> Type) (Q : B -> Type).
+  Hypothesis f : A -> B.
+  Hypothesis g : forall x, P x -> Q (f x).
+
+  Hypothesis y : B.
+  Hypothesis q : Q y.
+
+  Let fibfibration (xs : {x:A & f x == y}) : Type :=
+    let (x,s) := xs in { p:P x & transport s (g x p) == q }.
+
+  Definition three_by_three_fib :
+    sigT fibfibration <~> { xp : sigT P & total_map f g xp == (y;q) }.
+  Proof.
+    unfold fibfibration, total_map; simpl.
+    apply @equiv_compose with
+      (B := { x : A & { s : f x == y & {p : P x & transport s (g x p) == q}}}).
+    apply equiv_inverse.
+    apply total_assoc_sum with
+      (P := fun x => f x == y)
+      (Q := fun xs:{x : A & f x == y} =>
+        let (x,s) := xs in {p : P x & transport s (g x p) == q}).
+    apply @equiv_compose with
+      (B := {x : A & { p : P x & (f x ; g x p) == (y ; q)}}).
+    2:apply total_assoc_sum with
+      (Q := fun xp:sigT P =>
+        (let (x, y0) := xp in (f x ; g x y0)) == (y ; q)).
+    apply @equiv_compose with
+      (B := {x : A & {p : P x & {s : f x == y & transport s (g x p) == q}}}).
+    set (tc := fun x => total_comm (f x == y) (P x) (fun s p => transport s (g x p) == q)).
+    apply total_equiv with (g := tc).
+    intros x; apply (pr2 (tc x)).
+    set (tpe := fun x p => equiv_inverse
+      (total_paths_equiv B Q (f x ; g x p) (y ; q))).
+    set (tp := fun x => total_equiv
+      (fun p => {s : f x == y & transport s (g x p) == q})
+      (fun p => (f x ; g x p) == (y ; q))
+      (fun p => tpe x p)
+      (fun p => (pr2 (tpe x p)))).
+    apply total_equiv with
+      (P := fun x => {p : P x & {s : f x == y & transport s (g x p) == q}})
+      (Q := fun x => {p : P x & (f x ; g x p) == (y ; q)})
+      (g := tp).
+    intro x; apply (pr2 (tp x)).
+  Defined.
+
+End ThreeByThreeFib.
+
 (** The fiber of an identity map is contractible.
    This is pathspace_contr, pathspace_contr', pathspace_contr_opp
    from Contractible.v. *)
