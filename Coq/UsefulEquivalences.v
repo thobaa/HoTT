@@ -371,3 +371,14 @@ Section TotalComm.
   Defined.
 
 End TotalComm.
+
+(** Transporting along a path is an "adjoint equivalence". *)
+
+Lemma transport_adjoint X (P : X -> Type) (x y : X) (p : x == y)
+  (a : P x) (b : P y) :
+  (transport p a == b) <~> (a == transport (!p) b).
+Proof.
+  path_induction.
+  simpl.
+  apply idequiv.
+Defined.
