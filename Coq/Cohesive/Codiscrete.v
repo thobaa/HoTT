@@ -1,6 +1,6 @@
 Add LoadPath "..".
 Add LoadPath "../Subcategories".
-Require Import Homotopy LexReflectiveSubcategory.
+Require Import Homotopy Subtopos.
 
 (** We begin the axiomatization of cohesive toposes with the
    codiscrete objects and their reflector $\sharp$. *)

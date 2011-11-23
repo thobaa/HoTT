@@ -1,5 +1,5 @@
 Add LoadPath "..".
-Require Import Homotopy ReflectiveSubfibration StableFactorizationSystem LexReflectiveSubcategory.
+Require Import Homotopy Subtopos.
 
 (** We prove that any proposition [U] determines an *open subtopos*: a
    lex-reflective subcategory whose objects are those [X] such that
