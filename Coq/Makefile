@@ -26,6 +26,7 @@ VFILES:= Functions.v \
          Univalence.v \
          UnivalenceImpliesFunext.v \
 	 UnivalenceAxiom.v \
+	 FunextEquivalences.v \
 	 HLevel.v \
          Homotopy.v
 
