@@ -280,23 +280,26 @@ Section FactorizationSystem.
   Coercion Emap_coerce_to_function : Emap >-> Funclass.
 
   (** Any equivalence is in E. *)
-  Definition equiv_in_E {X Y} (f : X -> Y) : is_equiv f -> in_E f.
+  Definition equiv_Emap {X Y} (f : X <~> Y) : Emap X Y.
   Proof.
-    intros feq y.
+    exists f.
+    intros y.
     apply contr_equiv_contr with unit.
     apply @equiv_compose with (reflect unit).
     apply in_rsc_reflect_equiv. auto.
     apply reflect_functor_equiv.
     apply equiv_inverse, contr_equiv_unit.
-    apply feq. auto.
+    apply (pr2 f). auto.
   Defined.
 
   (** Likewise, any equivalence is in M. *)
-  Definition equiv_in_M {X Y} (f : X -> Y) : is_equiv f -> in_M f.
+  Definition equiv_Mmap {X Y} (f : X <~> Y) : Mmap X Y.
   Proof.
-    intros feq y.
+    exists f.
+    intros y.
     apply @transport with (P := in_rsc) (x := unit).
-    apply opposite, equiv_to_path, contr_equiv_unit, feq.
+    apply opposite, equiv_to_path, contr_equiv_unit.
+    apply (pr2 f).
     auto.
   Defined.
 
@@ -311,8 +314,6 @@ Section FactorizationSystem.
   Definition map_in_rsc_Mmap {X Y} (f : X -> Y) (Xr : in_rsc X) (Yr : in_rsc Y)
     : Mmap X Y
     := (existT in_M f (map_in_rsc_in_M f Xr Yr)).
-
-  Hint Resolve @equiv_in_E @equiv_in_M @map_in_rsc_in_M.
 
   (** A map that is inverted by the reflector, and whose codomain is
      in the subcategory, belongs to E.  (It is not true, in this
@@ -555,9 +556,22 @@ Section FactorizationSystem.
 
   End EInverted.
 
+  (** In particular, if an E-map has target in the subcategory, then
+     its factorization is an equivalence. *)
+  Definition invert_E_factor (X Y:Type) (f : Emap X Y) :
+    in_rsc Y -> (reflect X <~> Y).
+  Proof.
+    intros Yr.
+    exists (reflect_factor Yr f).
+    apply equiv_cancel_left with (g := in_rsc_reflect_equiv Y Yr).
+    apply @transport with (x := reflect_functor f).
+    simpl. apply opposite, reflect_factor_functor.
+    apply E_inverted.
+  Defined.
+
   (** In particular, that means that given an E-map between any two
      objects, one reflects to a point iff the other does. *)
-  Definition Emap_punctual_codomain {X Y} : Emap X Y ->
+  Definition Emap_punctual_codomain X Y : Emap X Y ->
     is_contr (reflect X) -> is_contr (reflect Y).
   Proof.
     intros f Xc.
@@ -566,7 +580,7 @@ Section FactorizationSystem.
     auto.
   Defined.
 
-  Definition Emap_punctual_domain {X Y} : Emap X Y ->
+  Definition Emap_punctual_domain X Y : Emap X Y ->
     is_contr (reflect Y) -> is_contr (reflect X).
   Proof.
     intros f Yc.
@@ -593,7 +607,7 @@ Section FactorizationSystem.
   Proof.
     exists (g o f).
     intros z.
-    apply @Emap_punctual_domain with
+    apply Emap_punctual_domain with
       (Y := {y:Y & g y == z}).
     exists (composite_fiber_map f g z).
     apply fibermap_in_E.
@@ -606,13 +620,76 @@ Section FactorizationSystem.
   Proof.
     intros gine.
     intros z.
-    apply @Emap_punctual_codomain with
+    apply Emap_punctual_codomain with
       (X := {x:X & g (f x) == z}).
     exists (composite_fiber_map f g z).
     apply fibermap_in_E.
     apply gine.
   Defined.
-  
+
+  (** And over a base map in E, if all fiber maps are in E, so is the
+     map on total spaces.  *)
+  Section EMapFiber.
+
+    Hypotheses A B C D : Type.
+    Hypotheses (f:A->B) (g : C -> D) (h:A->C) (k : Emap B D).
+    Hypothesis s:forall a, k (f a) == g (h a).
+
+    Hypothesis fibfge : forall b, in_E (square_fiber_map f g h k s b).
+
+    Theorem total_map_ine : in_E h.
+    Proof.
+      intros c.
+      assert (fibhke : in_E (square_fiber_map h k f g (fun a => !s a) c)).
+      intros [b p].
+      set (eq := three_by_three A B C D f g h k s b c p).
+      apply (contr_equiv_contr _ _ (reflect_functor_equiv eq)).
+      apply fibfge.
+      apply Emap_punctual_domain with
+        (Y := {b:B & k b == g c}).
+      exists (square_fiber_map h k f g (fun a : A => !s a) c).
+      assumption.
+      apply (pr2 k).
+    Defined.
+
+  End EMapFiber.
+
+  (** The same thing, for maps given as fibrations. *)
+  Section EMapFiberFibrations.
+
+    Hypothesis A B : Type.
+    Hypothesis (P : A -> Type) (Q : B -> Type).
+    Hypothesis f : Emap A B.
+    Hypothesis g : forall x, Emap (P x) (Q (f x)).
+
+    Theorem total_emap_fib : Emap (sigT P) (sigT Q).
+    Proof.
+      exists (total_map f g).
+      intros [b q].
+      set (eq := three_by_three_fib _ _ _ _ f g b q).
+      apply (contr_equiv_contr _ _ (reflect_functor_equiv eq)).
+      apply Emap_punctual_domain with (Y := {a:A & f a == b}).
+      exists pr1.
+      intros [a s].
+      set (eq2 := hfiber_fibration {x:A & f x == b}
+        (fun xs => let (x, s0) := xs in {p : P x & transport s0 ((g x) p) == q})
+        (a;s)). simpl in eq2.
+      apply (contr_equiv_contr _ _ (reflect_functor_equiv eq2)).
+      apply contr_equiv_contr with
+        (reflect {p : P a & g a p == transport (!s) q}).
+      apply reflect_functor_equiv.
+      assert (te : forall p:P a,
+        ((g a) p == transport (!s) q) <~> (transport s ((g a) p) == q)).
+      intros p.
+      apply equiv_inverse, transport_adjoint.
+      apply total_equiv with te.
+      intros p; apply (pr2 (te p)).
+      apply (pr2 (g a)).
+      apply (pr2 f).
+    Defined.
+
+  End EMapFiberFibrations.
+
   (** Every morphism factors as an E followed by an M. *)
   Section EMFactor.
 
