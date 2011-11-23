@@ -28,6 +28,16 @@ Section LexReflective.
 
   Hint Resolve reflect_in_rsc unit_in_rsc prod_in_rsc path_in_rsc exp_in_rsc sum_in_rsc.
 
+  (** A version of the additional axiom for fibrations. *)
+  Definition rsc_reflective_fs_fib X (P: X -> Type) (x:X) :
+    is_contr (reflect X) -> is_contr (reflect (sigT P)) -> is_contr (reflect (P x)).
+  Proof.
+    intros rx rt.
+    apply (contr_equiv_contr _ _
+      (reflect_functor_equiv (equiv_inverse (hfiber_fibration X P x)))).
+    apply rsc_reflective_fs; auto.
+  Defined.
+
   (** First, we prove the missing part of the 2-out-of-3 property for E-maps. *)
   Definition Emap_cancel_left {X Y Z} (f : X -> Y) (g : Emap Y Z) :
     in_E (g o f) -> in_E f.
@@ -57,15 +67,66 @@ Section LexReflective.
     path_via ((map_to_reflect Y o f) x).
     apply reflect_naturality.
     exact (pr2 (Emap_compose (Emap_to_reflect X)
-      ((reflect_functor f) ; equiv_in_E (reflect_functor f) H))).
+      (equiv_Emap ((reflect_functor f) ; H)))).
   Defined.
-  
+
+  (** And that over a base map in E, if the map on total spaces is in
+     E, so are all fiber maps.  *)
+  Section EMapBase.
+
+    Hypotheses A B C D : Type.
+    Hypotheses (f : A -> B) (g : C -> D) (h : Emap A C) (k : Emap B D).
+    Hypothesis s:forall a, k (f a) == g (h a).
+
+    Hypothesis b:B.
+
+    Theorem fiber_map_ine : in_E (square_fiber_map f g h k s b).
+    Proof.
+      intros [c p].
+      set (eq := three_by_three A B C D f g h k s b c (!p)).
+      apply @transport with (x := !!p) (y := p).
+      apply opposite_opposite.
+      apply (contr_equiv_contr _ _ (equiv_inverse (reflect_functor_equiv eq))).
+      apply rsc_reflective_fs.
+      apply (pr2 h).
+      apply (pr2 k).
+    Defined.
+
+  End EMapBase.
+
+  (** The same thing, for maps given as fibrations. *)
+  Section EMapBaseFibrations.
+
+    Hypothesis A B : Type.
+    Hypothesis (P : A -> Type) (Q : B -> Type).
+    Hypothesis f : Emap A B.
+    Hypothesis g : forall x, P x -> Q (f x).
+    Hypothesis tot_ine : in_E (total_map f g).
+
+    Theorem fiber_map_ine_fib (x:A) : in_E (g x).
+    Proof.
+      intros q.
+      set (e := rsc_reflective_fs_fib
+        ({a:A & f a == f x})
+        (fun xs:{a:A & f a == f x} =>
+          let (x,s) := xs in { p:P x & transport s (g x p) == q })
+        ((x;idpath (f x)))).
+      simpl in e. apply e.
+      apply (pr2 f).
+      apply contr_equiv_contr with
+        (A := reflect { xp : sigT P & total_map f g xp == (f x;q) }).
+      apply equiv_inverse, reflect_functor_equiv, three_by_three_fib.
+      apply tot_ine.
+    Defined.
+
+  End EMapBaseFibrations.
+
   (** The reflector preserves homotopy fibers. *)
   Section ReflectFibers.
 
     Hypotheses (X Y : Type) (f : X -> Y) (y:Y).
 
-    Let fibmap : Emap {x:X & f x == y}
+    Definition reflect_fiber_emap : Emap {x:X & f x == y}
       {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}.
     Proof.
       exists (square_fiber_map f (reflect_functor f)
@@ -111,33 +172,44 @@ Section LexReflective.
       auto.
     Defined.
 
-    Let rfibmap : reflect{x:X & f x == y} ->
+    Definition reflect_fiber_equiv :
+      reflect {x:X & f x == y} <~>
       {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}
-      := reflect_factor tg_in_rsc fibmap.
+      := invert_E_factor _ _ reflect_fiber_emap tg_in_rsc.
 
-    Definition reflect_preserves_fibers :
-      reflect {x:X & f x == y}
-      <~>
-      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}.
-    Proof.
-      exists rfibmap.
-      apply @equiv_cancel_left with
-        (C := reflect {rx:reflect X & reflect_functor f rx == map_to_reflect Y y})
-        (g := in_rsc_reflect_equiv
-          {rx:reflect X & reflect_functor f rx == map_to_reflect Y y} tg_in_rsc).
-      unfold rfibmap.
-      apply @transport with (P := is_equiv) (x := reflect_functor fibmap).
-      apply opposite.
-      path_via (map_to_reflect
-        {rx : reflect X & reflect_functor f rx == map_to_reflect Y y}
-        o reflect_factor tg_in_rsc fibmap).
-      apply reflect_factor_functor.
-      apply E_inverted.
-    Defined.
-    
   End ReflectFibers.
 
-  (** We should be able to use this to prove that it preserves all
-     finite limits. *)
+  (** The reflector preserves homotopy pullbacks. *)
+  Section ReflectPullbacks.
+
+    Hypotheses A B C : Type.
+    Hypotheses (f : A -> C) (g : B -> C).
+
+    Let pb := {a:A & {b:B & g b == f a}}.
+    Let rpb := {ra : reflect A & {rb : reflect B &
+      reflect_functor g rb == reflect_functor f ra}}.
+
+    Definition reflect_pullback_emap : Emap pb rpb.
+    Proof.
+      apply @total_emap_fib with (f := Emap_to_reflect A). auto.
+      intros a.
+      set (fc := reflect_fiber_emap B C g (f a)).
+      apply (Emap_compose fc).
+      apply equiv_Emap. simpl.
+      set (cer := fun rb => concat_equiv_right
+        (reflect_functor g rb) _ _ (!reflect_naturality f a)).
+      apply total_equiv with (g := cer).
+      intros x; apply (pr2 (cer x)).
+    Defined.
+
+    Let tg_in_rsc : in_rsc rpb.
+    Proof.
+      unfold rpb; auto.
+    Defined.
+
+    Definition reflect_pullback_equiv : reflect pb <~> rpb
+      := invert_E_factor _ _ reflect_pullback_emap tg_in_rsc.
+
+  End ReflectPullbacks.
 
 End LexReflective.
