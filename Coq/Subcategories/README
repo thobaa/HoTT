@@ -1,15 +1,23 @@
 The files in this directory develop the theory of "internal"
 reflective subcategories, and stable factorization systems, in the
-category of types.  The files go in the following order:
+category of types.  The files go in the following order, each adding
+new axioms to the previous ones.
 
 - ReflectiveSubfibration.v
 - StableFactorizationSystem.v
 - LexReflectiveSubcategory.v
 
-The file EpiMono.v gives an example: the epi-mono factorization
-system, corresponding to the reflective subcategory of propositions.
-(This example requires the higher inductive type is_inhab from the HIT
-directory.)
+The following files prove additional properties:
+
+- LocalSubfibration.v: Any reflective subfibration is local (i.e. a stack).
+
+The following files give examples.
+
+- EpiMono.v: the (effective-epi,mono) stable factorization system,
+  corresponding to the reflective subcategory of propositions.
+  (Requires the HIT is_inhab.)
+- OpenSubtopos.v: Any proposition (=subterminal object) U determines
+  an open subtopos.
 
 Unfortunately, these files result in universe inconsistencies when
 using plain Coq 8.3; so compiling them requires the Type-in-Type
