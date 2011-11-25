@@ -27,6 +27,40 @@ Section FactorizationSystem.
 
   Hint Resolve reflect_in_rsc unit_in_rsc prod_in_rsc path_in_rsc exp_in_rsc sum_in_rsc.
 
+  (** A few immediate consequences that are useful. *)
+
+  Definition is_contr_in_rsc A : in_rsc A -> in_rsc (is_contr A).
+  Proof.
+    unfold is_contr; auto.
+  Defined.
+
+  Hint Resolve is_contr_in_rsc.
+
+  Definition is_equiv_in_rsc A B (f:A->B) :
+    in_rsc A -> in_rsc B -> in_rsc (is_equiv f).
+  Proof.
+    unfold is_equiv, is_contr, hfiber.
+    auto 7.
+  Defined.
+
+  Hint Resolve is_equiv_in_rsc.
+  
+  Definition equiv_in_rsc A B :
+    in_rsc A -> in_rsc B -> in_rsc (A <~> B).
+  Proof.
+    unfold equiv; auto.
+  Defined.
+
+  Hint Resolve equiv_in_rsc.
+
+  Definition is_hlevel_in_rsc (n:nat) :
+    forall A, in_rsc A -> in_rsc (is_hlevel n A).
+  Proof.
+    induction n; [ simpl; auto | simpl; auto using IHn ].
+  Defined.
+
+  Hint Resolve is_hlevel_in_rsc.
+
   (** We begin with some consequences of this axiom that are still
      expressed in the language of a mere reflective subcategory. 
 
