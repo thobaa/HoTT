@@ -91,7 +91,6 @@ Section ReflectiveSubfibration.
     auto.
     exact (compose (map_to_reflect _) f).
   Defined.
-  Global Implicit Arguments reflect_functor [[X] [Y]].
 
   (** The functor action behaves as you would expect on factorizations. *)
   Definition reflect_factor_functor {X Y} (f : X -> Y) (Yr : in_rsc Y) : 
@@ -112,7 +111,7 @@ Section ReflectiveSubfibration.
 
   (** The following lemmas are all manifestations of functoriality. *)
 
-  Definition reflect_factoriality1 {X Y Z} (Yr : in_rsc Y) (Zr : in_rsc Z)
+  Definition reflect_factoriality_pre {X Y Z} (Yr : in_rsc Y) (Zr : in_rsc Z)
     (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
     g (reflect_factor Yr f rx) == reflect_factor Zr (g o f) rx.
   Proof.
@@ -127,14 +126,14 @@ Section ReflectiveSubfibration.
     cancel_inverses.
   Defined.
 
-  Definition reflect_factoriality2 {X Y Z} (Zr : in_rsc Z)
+  Definition reflect_factoriality_post {X Y Z} (Zr : in_rsc Z)
     (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
     reflect_factor Zr g (reflect_functor f rx) == reflect_factor Zr (g o f) rx.
   Proof.
     path_via ((reflection_equiv X Z Zr ^-1)
       (reflect_factor Zr g o (map_to_reflect Y o f)) rx).
     unfold reflect_functor, reflect_factor.
-    apply reflect_factoriality1.
+    apply reflect_factoriality_pre.
     apply happly.
     apply map.
     path_via ((reflect_factor Zr g o map_to_reflect Y) o f).
@@ -147,7 +146,7 @@ Section ReflectiveSubfibration.
   Definition reflect_functoriality {X Y Z} (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
     reflect_functor g (reflect_functor f rx) == reflect_functor (g o f) rx.
   Proof.
-    apply @reflect_factoriality2.
+    apply @reflect_factoriality_post.
   Defined.
 
   Definition reflect_functoriality_id {X} (rx : reflect X) :
@@ -159,7 +158,7 @@ Section ReflectiveSubfibration.
   Defined.
 
   (** The reflection is also a 2-functor. *)
-  Definition reflect_functor2 {X Y} (f g : X -> Y) (p : forall x, f x == g x) :
+  Definition reflect_2functor {X Y} (f g : X -> Y) (p : forall x, f x == g x) :
     forall rx : reflect X, reflect_functor f rx == reflect_functor g rx.
   Proof.
     intros rx; apply happly.
@@ -440,17 +439,34 @@ Section ReflectiveSubfibration.
   Hint Resolve exp_in_rsc.
 
   (** This allows us to extend functoriality to multiple variables. *)
-  Definition reflect_functor_twovar {X Y Z}
-    : (X -> Y -> Z) -> (reflect X -> reflect Y -> reflect Z).
+
+  Definition reflect_factor2 {X Y Z} : in_rsc Z ->
+    (X -> Y -> Z) -> (reflect X -> reflect Y -> Z).
   Proof.
-    intros f rx.
-    apply @reflect_factor with (X := X).
-    apply exp_in_rsc. intros; apply reflect_in_rsc.
-    intros x ry.
-    apply @reflect_factor with (X := Y).
-    apply reflect_in_rsc.
-    intros y.
-    apply map_to_reflect, f; auto. auto. auto.
+    intros Zr f rx.
+    apply reflect_factor. auto.
+    apply @reflect_factor with (X := X); auto.
+  Defined.
+
+  Definition reflect_functor2 {X Y Z} :
+    (X -> Y -> Z) -> (reflect X -> reflect Y -> reflect Z).
+  Proof.
+    intros f rx ry.
+    apply @reflect_factor2 with X Y; auto.
+    intros x y; apply map_to_reflect; apply f; auto.
+  Defined.
+
+  (** Naturality of [map_to_reflect] for two variables. *)
+
+  Definition reflect_naturality2 X Y Z (x:X) (y:Y) (f:X->Y->Z) :
+    reflect_functor2 f (map_to_reflect X x) (map_to_reflect Y y)
+    == map_to_reflect Z (f x y).
+  Proof.
+    unfold reflect_functor2, reflect_factor2.
+    path_via ((reflect_factor (reflect_in_rsc Z)
+      (fun y0 => map_to_reflect Z (f x y0))) (map_to_reflect Y y)).
+    apply happly, map, reflect_factor_factors.
+    apply @reflect_factor_factors with (f := (fun y0 : Y => map_to_reflect Z (f x y0))).
   Defined.
 
   (** And to prove that the reflector preserves finite products. *)
@@ -535,7 +551,7 @@ Section ReflectiveSubfibration.
       (A * B -> C) -> (reflect A * reflect B -> C)
       := reflection_equiv_twovar C Cr ^-1.
 
-    Definition reflect_factoriality1_twovar {C D} (Cr : in_rsc C) (Dr : in_rsc D)
+    Definition reflect_factoriality_pre_twovar {C D} (Cr : in_rsc C) (Dr : in_rsc D)
       (f : A * B -> C) (g : C -> D) :
       g o reflect_factor_twovar Cr f == reflect_factor_twovar Dr (g o f).
     Proof.
@@ -560,7 +576,7 @@ Section ReflectiveSubfibration.
         (fun ab : A * B =>
           (map_to_reflect A (fst ab), map_to_reflect B (snd ab))))
         o (map_to_reflect (A * B)))).
-      apply reflect_factoriality1_twovar.
+      apply reflect_factoriality_pre_twovar.
       unfold compose.
       unfold reflect_factor_twovar.
       equiv_moveright.

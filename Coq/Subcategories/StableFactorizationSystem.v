@@ -80,6 +80,23 @@ Section FactorizationSystem.
     intros x; apply map_to_reflect; auto.
   Defined.
 
+  (** The following tactic takes as one argument a hypothesis of type
+     [reflect X] and applies [reflect_factor_dep] to change that
+     hypothesis into one of type [X].  Of course, this requires the
+     goal to be [in_rsc].  The tactic tries to prove this with [auto],
+     which should succeed in most cases if the appropriate facts are
+     in the hint database.
+
+     Unfortunately, there is no way to declare a [Global Ltac], so we
+     have to also redefine it later after the section is over.  *)
+
+  Ltac unreflect A :=
+    generalize dependent A;
+    intros A;
+    pattern A;
+    apply reflect_factor_dep;
+    [ auto | clear A; intro A].
+
   (** Next, we prove that over a base object that is in the
      subcategory, the "fiberwise reflection" is equivalent to
      reflecting the total space. *)
@@ -105,46 +122,18 @@ Section FactorizationSystem.
       intros [x p]; exists x; apply map_to_reflect; assumption.
     Defined.
 
-    (* This proof is far too messy. *)
     Definition reflect_functor_fiberwise  :
       {x:X & reflect (P x)} <~> (reflect (sigT P)).
     Proof.
       exists rf1.
       apply hequiv_is_equiv with (g := rf2).
       intros rx.
-      apply reflect_factor_dep with
-        (X := sigT P) (P := fun rx => rf1 (rf2 rx) == rx).
-      auto.
-      intros [x p].
-      unfold rf1, rf2.
-      assert (H0 :  reflect_factor
-       (sum_in_rsc X (fun x0 : X => reflect (P x0)) Xr
-          (fun x0 : X => reflect_in_rsc (P x0)))
-       (fun X0 : sigT P =>
-        match X0 return {x0 : X & reflect (P x0)} with
-        | (x0 ; p0) => (x0 ; map_to_reflect (P x0) p0)
-        end) (map_to_reflect (sigT P) (x ; p))
-       == (x ; map_to_reflect (P x) p)).
-      apply @reflect_factor_factors with
-        (f := (fun X0 : sigT P =>
-          match X0 return {x0 : X & reflect (P x0)} with
-            | (x0 ; p0) => (x0 ; map_to_reflect (P x0) p0)
-          end))
-        (x := (x ; p)).
-      set (H1 := map (fun z:{x0:X & reflect (P x0)} =>
-        match z return (reflect (sigT P))
-          with
-          | (x0 ; rp) => reflect_functor (fun p0 : P x0 => (x0 ; p0)) rp
-        end) H0).
-      simpl in H1.
-      path_via (match
-       (fun X0 : sigT P =>
-        match X0 return {x0 : X & reflect (P x0)} with
-        | (x0 ; p0) => (x0 ; map_to_reflect (P x0) p0)
-        end) (x ; p) return (reflect (sigT P))
-                  with
-                  | (x0 ; rp) => reflect_functor (fun p0 : P x0 => (x0 ; p0)) rp
-                end).
+      unreflect rx.
+      unfold rf2.
+      path_via (rf1 (let (x, p) := rx in (x ; map_to_reflect (P x) p))).
+      apply reflect_factor_factors.
+      destruct rx as [x p].
+      unfold rf1.
       apply reflect_naturality.
 
       intros [x rp].
@@ -155,12 +144,8 @@ Section FactorizationSystem.
         ((fun X0 : sigT P => let (x0, p) := X0 in
           (existT (fun x' => reflect (P x')) x0 (map_to_reflect (P x0) p)))
         o (fun p : P x => (x ; p))) rp).
-      apply reflect_factoriality2.
-      path_via (reflect_factor
-        (sum_in_rsc X (fun x0 : X => reflect (P x0)) Xr
-          (fun x0 : X => reflect_in_rsc (P x0)))
-        (fun p : P x =>
-          (existT (fun x' => reflect (P x')) x (map_to_reflect (P x) p))) rp).
+      apply reflect_factoriality_post.
+      unfold compose.
       apply reflect_factor_unfactors.
     Defined.
 
@@ -249,7 +234,7 @@ Section FactorizationSystem.
       path_via (reflect_factor Yr (PftoY o XtoPf)).
       apply funext.  intros rx.
       path_via (reflect_factor Yr PftoY (reflect_functor XtoPf rx)).
-      apply reflect_factoriality2.
+      apply reflect_factoriality_post.
       apply (transport (!rcf)).
       assumption.
     Defined.
@@ -274,7 +259,7 @@ Section FactorizationSystem.
      (existT (fun y' =>  reflect {x:X & f x == y'}) y rxp))).
       path_via (reflect_factor Yr (PftoY o
         (fun p : {x0 : X & f x0 == y} => (y ; p))) rxp).
-      apply @reflect_factoriality2.
+      apply @reflect_factoriality_post.
       unfold PftoY.
       path_via (reflect_factor Yr (fun _ => y) rxp).
       apply reflect_factor_constant.
@@ -430,8 +415,7 @@ Section FactorizationSystem.
     Definition E_inverted : is_equiv (reflect_functor f).
     Proof.
       apply hequiv_is_equiv with invert.
-      apply reflect_factor_dep with (X := Y). auto.
-      intros y.
+      intros y; unreflect y.
       unfold invert.
       path_via (rfm
         (EMlift f rfm (map_to_reflect X) (map_to_reflect Y)
@@ -444,8 +428,7 @@ Section FactorizationSystem.
         (m := rfm)
         (f := map_to_reflect X)
         (g := map_to_reflect Y).
-      apply reflect_factor_dep with (X := X). auto.
-      intros x.
+      intros x; unreflect x.
       path_via (invert (map_to_reflect Y (f x))).
       apply reflect_naturality.
       unfold invert.
@@ -673,3 +656,13 @@ Section FactorizationSystem.
   End EMFactor.
 
 End FactorizationSystem.
+
+(* We have to redefine this tactic again so that it is visible outside
+   the section. *)
+
+Ltac unreflect A :=
+  generalize dependent A;
+  intros A;
+  pattern A;
+  apply reflect_factor_dep;
+  [ auto | clear A; intro A].
