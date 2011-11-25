@@ -508,7 +508,7 @@ Section ReflectiveSubfibration.
       assert (n2 : forall C Cr D Dr f (g:C->D), (fun a => g o ((e2 C Cr f) a)) == e2 D Dr (fun ra => g o (f ra))).
       intros; simpl; auto.
       (* reflect B -> A -> C *)
-      set (e3 := fun C => arg_comm_equiv A (reflect B) C).
+      set (e3 := fun C => flip_equiv A (reflect B) C).
       assert (v3 : forall C f a rb, e3 C f rb a == f a rb).
       intros; simpl; auto.
       assert (n3 : forall C D f (g:C->D), (fun a => g o ((e3 C f) a)) == e3 D (fun a => g o (f a))).
@@ -521,7 +521,7 @@ Section ReflectiveSubfibration.
       assert (n4 : forall C Cr D Dr f (g:C->D), (fun b => g o ((e4 C Cr f) b)) == e4 D Dr (fun rb => g o (f rb))).
       intros; simpl; auto.
       (* A -> B -> C *)
-      set (e5 := fun C => arg_comm_equiv B A C).
+      set (e5 := fun C => flip_equiv B A C).
       assert (v5 : forall C f a b, e5 C f a b == f b a).
       intros; simpl; auto.
       assert (n5 : forall C D f (g:C->D), (fun a => g o ((e5 C f) a)) == e5 D (fun a => g o (f a))).

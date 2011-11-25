@@ -382,3 +382,18 @@ Proof.
   simpl.
   apply idequiv.
 Defined.
+
+(** The product of two equivalences is an equivalence. *)
+
+Lemma product_equiv A B C D :
+  (A <~> B) -> (C <~> D) -> (A*C <~> B*D).
+Proof.
+  intros f g.
+  exists (fun ac => (f (fst ac), g (snd ac))).
+  apply @hequiv_is_equiv with
+    (g := fun bd => (f ^-1 (fst bd), g ^-1 (snd bd))).
+  intros [b d]; simpl.
+  apply prod_path; cancel_inverses.
+  intros [a c] ;simpl.
+  apply prod_path; cancel_inverses.
+Defined.
