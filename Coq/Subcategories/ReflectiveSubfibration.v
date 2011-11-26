@@ -74,6 +74,25 @@ Section ReflectiveSubfibration.
     cancel_inverses.
   Defined.
 
+  Definition reflect_factor_factunfact {X Y} (Yr : in_rsc Y)
+    (f : reflect X -> Y) (x : X) :
+    reflect_factor_unfactors Yr f (map_to_reflect X x) ==
+    reflect_factor_factors Yr (f o map_to_reflect X) x.
+  Proof.
+    unfold reflect_factor_unfactors, reflect_factor_factors.
+    cancel_units.
+    apply_happly; apply map; cancel_units.
+    path_via (happly (map (reflection_equiv X Y Yr)
+      (inverse_is_retraction (reflection_equiv X Y Yr) f))
+    x).
+    unfold happly. undo_compose_map.
+    apply_happly; apply map.
+    apply @inverse_triangle with
+      (w := (reflection_equiv X Y Yr))
+      (x := f).
+    apply_happly; apply map; cancel_units.
+  Defined.
+
   Definition reflect_factor_constant {X Y} (Yr : in_rsc Y) (y : Y) (rx : reflect X) :
     reflect_factor Yr (fun _ => y) rx == y.
   Proof.
@@ -118,7 +137,7 @@ Section ReflectiveSubfibration.
     unfold reflect_factor.
     path_via ((g o ((reflection_equiv X Y Yr ^-1) f)) rx).
     apply happly.
-    apply equiv_injective with (w := reflection_equiv X Z Zr).
+    apply @equiv_map_inv with (f := reflection_equiv X Z Zr).
     cancel_inverses.
     path_via ((g o (reflection_equiv X Y Yr ^-1) f) o map_to_reflect X).
     path_via (g o ((reflection_equiv X Y Yr ^-1) f o map_to_reflect X)).
@@ -155,6 +174,49 @@ Section ReflectiveSubfibration.
     unfold reflect_functor.
     path_via (reflect_factor (reflect_in_rsc X) (@id (reflect X) o map_to_reflect X) rx).
     apply reflect_factor_unfactors.
+  Defined.
+
+  (** A sort of functoriality for the functoriality. *)
+
+  Definition reflect_factoriality_pre_factors  {X Y Z} (Yr : in_rsc Y) (Zr : in_rsc Z)
+    (g : Y -> Z) (f : X -> Y) (x : X) :
+    reflect_factoriality_pre Yr Zr g f (map_to_reflect X x) @
+    reflect_factor_factors Zr (g o f) x ==
+    map g (reflect_factor_factors Yr f x).
+  Proof.
+    unfold reflect_factoriality_pre, reflect_factor_factors.
+    cancel_units; try (apply_happly; repeat apply map; cancel_units).
+    moveright_onright.
+    path_via (happly
+      (equiv_map_equiv (reflection_equiv X Z Zr)
+        (equiv_map_equiv
+          (x := (g o (reflection_equiv X Y Yr ^-1) f))
+          (reflection_equiv X Z Zr) ^-1
+          (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
+            !inverse_is_section (reflection_equiv X Z Zr) (g o f)))) x).
+    apply opposite.
+    apply map_precompose with
+      (h := map_to_reflect X)
+      (p := (equiv_map_inv (reflection_equiv X Z Zr)
+          (x := (g o (reflection_equiv X Y Yr ^-1) f))
+        (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
+         !inverse_is_section (reflection_equiv X Z Zr) (g o f))))
+      (a := x).
+    path_via (happly (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
+      !inverse_is_section (reflection_equiv X Z Zr) (g o f)) x).
+    apply_happly; apply map; cancel_inverses.
+    moveleft_onright.
+    unfold happly.
+    path_via (map (fun h : X -> Z => h x)
+      ((map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
+        !inverse_is_section (reflection_equiv X Z Zr) (g o f)) @ 
+      (inverse_is_section (reflection_equiv X Z Zr) (g o f)))).
+    apply opposite.
+    apply concat_map with (f := fun h => h x).
+    path_via (map (fun h => h x)
+      (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f))).
+    cancel_opposites.
+    undo_compose_map.
   Defined.
 
   (** The reflection is also a 2-functor. *)
