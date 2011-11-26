@@ -397,3 +397,36 @@ Proof.
   intros [a c] ;simpl.
   apply prod_path; cancel_inverses.
 Defined.
+
+(** Products are equivalent to pullbacks over any contractible type. *)
+
+Section PullbackContr.
+
+  Hypotheses A B C : Type.
+  Hypothesis Cc : is_contr C.
+  Hypothesis (f : A -> C) (g : B -> C).
+
+  Let pbu1 : {x:A & {y:B & f x == g y}} -> A * B.
+  Proof.
+    intros [a [b p]].
+    exact (a,b).
+  Defined.
+
+  Let pbu2 : A * B -> {x:A & {y:B & f x == g y}}.
+  Proof.
+    intros [a b].
+    exists a; exists b; apply contr_path, Cc.
+  Defined.
+
+  Definition pullback_over_contr : {x:A & {y:B & f x == g y}} <~> A * B.
+  Proof.
+    exists pbu1.
+    apply hequiv_is_equiv with pbu2.
+    intros [a b]. simpl. auto.
+    intros [a [b p]]. simpl.
+    apply total_path with (idpath a). simpl.
+    apply total_path with (idpath b); simpl.
+    apply contr_path2. apply Cc.
+  Defined.
+  
+End PullbackContr.
