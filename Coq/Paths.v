@@ -350,10 +350,10 @@ Hint Resolve
 
 Ltac apply_happly :=
   match goal with
-    | |- ?f' ?x == ?g' ?x =>
+    | |- ?f' ?x' == ?g' ?x' =>
       first [
-          apply @happly with (f := f') (g := g')
-        | apply @happly_dep with (f := f') (g := g')
+          apply @happly with (f := f') (g := g') (x := x')
+        | apply @happly_dep with (f := f') (g := g') (x := x')
       ]
   end.
 
