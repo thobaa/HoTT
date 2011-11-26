@@ -74,33 +74,58 @@ Section FactorizationSystem.
     Hypothesis Pr : forall x, in_rsc (P x).
     Hypothesis f : forall x, P (map_to_reflect X x).
 
-    Let rfdepmap : reflect X -> sigT P.
+    Let fdep (x:X) : sigT P := (map_to_reflect X x; f x).
+
+    Let rfdep : reflect X -> sigT P.
     Proof.
-      intros x.
-      apply (inverse (in_rsc_reflect_equiv (sigT P)
-        (sum_in_rsc _ P (reflect_in_rsc X) Pr))).
-      generalize dependent x.
-      apply reflect_functor.
-      intros x. exists (map_to_reflect X x). exact (f x).
+      apply reflect_factor; auto.
+    Defined.
+
+    Let rfdep_factors (x:X) : rfdep (map_to_reflect X x) == fdep x.
+    Proof.
+      apply @reflect_factor_factors with (f := fdep).
+    Defined.
+
+    Let rfdep_section (rx : reflect X) : pr1 (rfdep rx) == rx.
+    Proof.
+      path_via (reflect_factor (reflect_in_rsc X) (pr1 o fdep) rx).
+      apply reflect_factoriality_pre.
+      unfold compose; simpl.
+      apply @reflect_factor_unfactors with (f := idmap (reflect X)).
+    Defined.
+
+    Let rfdep_section_factors (x:X) :
+      rfdep_section (map_to_reflect X x) == map pr1 (rfdep_factors x).
+    Proof.
+      unfold rfdep_factors, rfdep_section.
+      apply @concat with (y := reflect_factoriality_pre
+        (sum_in_rsc (reflect X) P (reflect_in_rsc X) Pr)
+        (reflect_in_rsc X) pr1 fdep (map_to_reflect X x)
+        @
+        reflect_factor_factors (reflect_in_rsc X)
+        (idmap _ o map_to_reflect X) x).
+      apply whisker_left.
+      apply reflect_factor_factunfact.
+      unfold compose, idmap.
+      apply @reflect_factoriality_pre_factors with
+        (f := fdep).
     Defined.
 
     Definition reflect_factor_dep : (forall rx, P rx).
     Proof.
       intros rx.
-      assert (p : pr1 (rfdepmap rx) == rx).
-      unfold rfdepmap.
-      path_via (inverse (in_rsc_reflect_equiv (reflect X) (reflect_in_rsc X))
-        (reflect_functor pr1
-          (reflect_functor (fun x : X => (map_to_reflect X x ; f x)) rx))).
-      apply reflect_inverse_naturality.
-      equiv_moveright.
-      path_via (reflect_functor
-        (pr1 o (fun x : X => (map_to_reflect X x ; f x))) rx).
-      apply reflect_functoriality.
-      path_via (reflect_functor (map_to_reflect X) rx).
-      apply @reflect_wellpointed with (X := X).
-      apply (transport p).
-      exact (pr2 (rfdepmap rx)).
+      apply (transport (rfdep_section rx)).
+      exact (pr2 (rfdep rx)).
+    Defined.
+
+    Definition reflect_factor_dep_factors (x:X) :
+      reflect_factor_dep (map_to_reflect X x) == f x.
+    Proof.
+      unfold reflect_factor_dep.
+      path_via (transport (map pr1 (rfdep_factors x))
+        (pr2 (rfdep (map_to_reflect X x)))).
+      apply happly, map, rfdep_section_factors.
+      apply fiber_path with (p := rfdep_factors x).
     Defined.
 
   End DependentFactor.
