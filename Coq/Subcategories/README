@@ -6,18 +6,34 @@ new axioms to the previous ones.
 - ReflectiveSubfibration.v
 - StableFactorizationSystem.v
 - LexReflectiveSubcategory.v
+- Subtopos.v (loads all the above)
 
 The following files prove additional properties:
 
-- LocalSubfibration.v: Any reflective subfibration is local (i.e. a stack).
+- Stack.v: Any reflective subfibration is local (i.e. a stack).
 
 The following files give examples.
 
-- EpiMono.v: the (effective-epi,mono) stable factorization system,
+- EpiMono.v: The (effective-epi,mono) stable factorization system,
   corresponding to the reflective subcategory of propositions.
   (Requires the HIT is_inhab.)
+
 - OpenSubtopos.v: Any proposition (=subterminal object) U determines
   an open subtopos.
+
+The following files develop additional properties, using Axioms rather
+than typeclasses.
+
+- Codiscrete.v: Externalizing internal operations into a
+  lex-reflective subcategory of "codiscrete objects"
+
+- LocalTopos.v: By adding a coreflective subcategory of "discrete
+  objects" axiomatized externally, we obtain an internal
+  characterization of local toposes.
+
+- CohesiveTopos.v: By making the discrete objects also reflective with
+  a reflector preserving finite products, we axiomatize cohesive
+  toposes.
 
 Unfortunately, these files result in universe inconsistencies when
 using plain Coq 8.3; so compiling them requires the Type-in-Type
