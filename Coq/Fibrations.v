@@ -166,6 +166,13 @@ Proof.
   path_induction.
 Defined.
 
+Lemma trans_map2 {A} {P Q R : A -> Type} {x y : A} (p : x == y)
+  (f : forall x, P x -> Q x -> R x) (z : P x) (w: Q x) :
+  f y (transport p z) (transport p w) == (transport p (f x z w)).
+Proof.
+  path_induction.
+Defined.
+
 (** And also with applying fiberwise functions. *)
 
 Lemma trans_map {A} {P Q : A -> Type} {x y : A} (p : x == y) (f : forall x, P x -> Q x) (z : P x) :

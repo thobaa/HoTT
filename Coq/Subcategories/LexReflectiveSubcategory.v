@@ -59,14 +59,14 @@ Section LexReflective.
     is_equiv (reflect_functor f) -> in_E f.
   Proof.
     intros H.
-    apply Emap_cancel_left with (g := Emap_to_reflect Y).
+    apply Emap_cancel_left with (g := to_reflect_Emap Y).
     apply @transport with
       (P := fun g:X -> reflect Y => in_E g)
-      (x := (reflect_functor f) o (map_to_reflect X)).
+      (x := (reflect_functor f) o (to_reflect X)).
     apply funext. intros x.
-    path_via ((map_to_reflect Y o f) x).
+    path_via ((to_reflect Y o f) x).
     apply reflect_naturality.
-    exact (pr2 (Emap_compose (Emap_to_reflect X)
+    exact (pr2 (Emap_compose (to_reflect_Emap X)
       (equiv_Emap ((reflect_functor f) ; H)))).
   Defined.
 
@@ -127,55 +127,55 @@ Section LexReflective.
     Hypotheses (X Y : Type) (f : X -> Y) (y:Y).
 
     Definition reflect_fiber_emap : Emap {x:X & f x == y}
-      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}.
+      {rx:reflect X & reflect_functor f rx == to_reflect Y y}.
     Proof.
       exists (square_fiber_map f (reflect_functor f)
-        (map_to_reflect X) (map_to_reflect Y)
+        (to_reflect X) (to_reflect Y)
         (fun x => !reflect_naturality f x) y).
       intros [rx p].
       apply @transport with (P := fun T => is_contr (reflect T))
-        (x := {z : {x:X & map_to_reflect X x == rx} &
-          square_fiber_map (map_to_reflect X) (map_to_reflect Y)
+        (x := {z : {x:X & to_reflect X x == rx} &
+          square_fiber_map (to_reflect X) (to_reflect Y)
            f (reflect_functor f)
            (fun x => !!reflect_naturality f x) rx z
            == (existT
-             (fun y' => map_to_reflect Y y' == reflect_functor f rx)
+             (fun y' => to_reflect Y y' == reflect_functor f rx)
              y (!p))}).
       apply opposite, equiv_to_path.
       apply @transport with (y := p) (x := !(!p))
         (P := fun q => {x : {x : X & f x == y} &
-          square_fiber_map f (reflect_functor f) (map_to_reflect X)
-          (map_to_reflect Y) (fun x0 : X => !reflect_naturality f x0) y x ==
+          square_fiber_map f (reflect_functor f) (to_reflect X)
+          (to_reflect Y) (fun x0 : X => !reflect_naturality f x0) y x ==
           (rx ; q)} <~>
-        {z : {x : X & map_to_reflect X x == rx} &
-          square_fiber_map (map_to_reflect X) (map_to_reflect Y) f
+        {z : {x : X & to_reflect X x == rx} &
+          square_fiber_map (to_reflect X) (to_reflect Y) f
           (reflect_functor f) (fun x : X => !(!reflect_naturality f x)) rx z ==
           (y ; !p)}).
       do_opposite_opposite.
       apply three_by_three with
         (f := f)
         (g := reflect_functor f)
-        (h := map_to_reflect X)
-        (k := map_to_reflect Y)
+        (h := to_reflect X)
+        (k := to_reflect Y)
         (s := fun x => !reflect_naturality f x)
         (b := y)
         (c := rx)
         (d := !p).
       apply rsc_reflective_fs.
-      apply map_to_reflect_in_E.
-      apply map_to_reflect_in_E.
+      apply to_reflect_in_E.
+      apply to_reflect_in_E.
     Defined.
 
     Let tg_in_rsc : in_rsc {rx:reflect X &
-      reflect_functor f rx == map_to_reflect Y y}.
+      reflect_functor f rx == to_reflect Y y}.
     Proof.
       auto.
     Defined.
 
     Definition reflect_fiber_equiv :
       reflect {x:X & f x == y} <~>
-      {rx:reflect X & reflect_functor f rx == map_to_reflect Y y}
-      := invert_E_factor _ _ reflect_fiber_emap tg_in_rsc.
+      {rx:reflect X & reflect_functor f rx == to_reflect Y y}
+      := Emap_invert_factor _ _ reflect_fiber_emap tg_in_rsc.
 
   End ReflectFibers.
 
@@ -191,7 +191,7 @@ Section LexReflective.
 
     Definition reflect_pullback_emap : Emap pb rpb.
     Proof.
-      apply @total_emap_fib with (f := Emap_to_reflect A). auto.
+      apply @total_emap_fib with (f := to_reflect_Emap A). auto.
       intros a.
       set (fc := reflect_fiber_emap B C g (f a)).
       apply (Emap_compose fc).
@@ -208,7 +208,7 @@ Section LexReflective.
     Defined.
 
     Definition reflect_pullback_equiv : reflect pb <~> rpb
-      := invert_E_factor _ _ reflect_pullback_emap tg_in_rsc.
+      := Emap_invert_factor _ _ reflect_pullback_emap tg_in_rsc.
 
   End ReflectPullbacks.
 

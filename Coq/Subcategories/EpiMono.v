@@ -19,7 +19,7 @@ Require Import IsInhab.
 Instance prop_is_rsf : rsf is_prop := {
   in_rsc_prop X := isprop_isprop
   ; reflect X := is_inhab X
-  ; map_to_reflect X := inhab
+  ; to_reflect X := inhab
 }.
 Proof.
   apply is_inhab_is_prop.

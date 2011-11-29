@@ -11,49 +11,49 @@ Section OpenSubtopos.
   Hypothesis U_is_prop : is_prop U.
 
   Definition oU A := U -> A.
-  Definition map_to_oU A (x:A) := (fun _:U => x).
+  Definition to_oU A (x:A) := (fun _:U => x).
 
-  Definition in_oU A := is_equiv (map_to_oU A).
+  Definition in_oU A := is_equiv (to_oU A).
 
   Global Instance oU_is_rsf : rsf in_oU := {
-    in_rsc_prop A := is_equiv_is_prop (map_to_oU A)
+    in_rsc_prop A := is_equiv_is_prop (to_oU A)
     ; reflect A := U -> A
-    ; map_to_reflect A := map_to_oU A
+    ; to_reflect A := to_oU A
   }.
   Proof.
   (* reflect_in_rsc *)
     intros A.
-    unfold in_oU, map_to_oU.
+    unfold in_oU, to_oU.
     apply hequiv_is_equiv with (fun a => fun u => a u u).
     intros a.
     apply funext.  intros u1. apply funext. intros u2.
     apply happly. apply map. apply prop_path; auto.
     intros a. apply funext. intros u. auto.
   (* reflect_is_reflection *)
-    intros A B Bu. unfold map_to_oU.
-    set (etab := (map_to_oU B ; Bu) : B <~> (U -> B)).
+    intros A B Bu. unfold to_oU.
+    set (etab := (to_oU B ; Bu) : B <~> (U -> B)).
     apply hequiv_is_equiv with
       (fun g => (etab ^-1) o (fun f:U->A => fun u:U => g (f u))).
     intros g.
     apply funext.  intro a. unfold compose.
     equiv_moveright.
-    unfold etab, map_to_oU. simpl. auto.
+    unfold etab, to_oU. simpl. auto.
     intros f.
     apply funext.  intro h. unfold compose.
     equiv_moveright.
-    unfold etab, map_to_oU. simpl.
+    unfold etab, to_oU. simpl.
     apply funext.  intro u. apply map. apply funext. intro u'.
     apply map. apply prop_path; auto.
   Defined.
 
   Let in_oU_reflect_equiv A (Au : in_oU A) : (A <~> (U -> A))
-    := (map_to_oU A ; Au).
+    := (to_oU A ; Au).
     
   Let in_oU_eval_inverse A (Au : in_oU A) (u:U) (f:U->A) :
     (in_oU_reflect_equiv A Au ^-1) f == f u.
   Proof.
     equiv_moveright.
-    unfold in_oU_reflect_equiv, map_to_oU. simpl.
+    unfold in_oU_reflect_equiv, to_oU. simpl.
     apply funext; intro u'.
     apply map, prop_path; auto.
   Defined.
@@ -89,7 +89,7 @@ Section OpenSubtopos.
     Proof.
       equiv_moveright.
       apply funext; intro u.
-      unfold Xe, compose. simpl. unfold map_to_oU.
+      unfold Xe, compose. simpl. unfold to_oU.
       auto.
     Defined.
 
@@ -99,7 +99,7 @@ Section OpenSubtopos.
       apply hequiv_is_equiv with (sum_map_back).
       intros f.
       apply funext. intros u.
-      unfold map_to_oU, sum_map_back.
+      unfold to_oU, sum_map_back.
       apply total_path with (sum_path f u).
       simpl.
       set (g := (fun u0 : U =>
@@ -113,12 +113,12 @@ Section OpenSubtopos.
       apply happly, map. cancel_opposites.
 
       intros [x p].
-      unfold map_to_oU, sum_map_back. simpl.
+      unfold to_oU, sum_map_back. simpl.
       apply total_path with (sum_path2 (x;p)). simpl.
       path_via (transport (sum_path2 (x;p)) (transport (!sum_path2 (x;p)) p)).
       equiv_moveright.
       apply funext; intro u. simpl.
-      unfold map_to_oU; simpl.
+      unfold to_oU; simpl.
       apply happly, map.
       apply opposite2.
       unfold sum_path2. simpl.
