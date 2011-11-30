@@ -109,6 +109,20 @@ Proof.
   apply @is_inhab_compute_inhab with (P := fun _ => A).
 Defined.
 
+(** And conversely. *)
+
+Definition prop_inhab_equiv (A : Type) :
+  is_prop A <~> is_equiv (@inhab A).
+Proof.
+  intros A.
+  apply prop_iff_equiv;
+    [ apply isprop_isprop
+    | apply is_equiv_is_prop
+    | apply prop_inhab_is_equiv
+    | exact (fun Ap => (transport
+      (!equiv_to_path ((@inhab A) ; Ap)) (is_inhab_is_prop A)))].
+Defined.
+
 (** Inhabited propositions are contractible. *)
 
 Lemma inhab_prop_contr (A : Type) :
