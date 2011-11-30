@@ -206,6 +206,54 @@ Section Modality.
       (f := (fun x0 : X => g (to_modal X x0))).
   Defined.
 
+  Let sig_inv (X:Type) (P : X -> Type) (Xm : is_modal X) (Pm : forall x, is_modal (P x))
+    : modal (sigT P) -> sigT P.
+  Proof.
+    intros mxp.
+    set (mp1 := modal_rect (sigT P) (fun _ => X) (fun _ => Xm) pr1).
+    exists (mp1 mxp).
+    apply @modal_rect with (X := sigT P) (P := fun mxp => P (mp1 mxp)).
+    intros; apply Pm.
+    intros [x p]. unfold mp1; simpl.
+    apply @transport with (P := P) (x := x).
+    apply opposite.
+    apply modal_rect_compute with (X := sigT P) (P := fun _ => X).
+    exact p.
+  Defined.
+
+  Let sig_inv_compute (X:Type) (P : X -> Type)
+    (Xm : is_modal X) (Pm : forall x, is_modal (P x)) (xp : sigT P)
+    : sig_inv X P Xm Pm (to_modal (sigT P) xp) == xp.
+  Proof.
+    destruct xp as [x p]. unfold sig_inv.
+    set (mpr1 := modal_rect (sigT P) (fun _ => X) (fun _ => Xm) pr1).
+    set (mpr1c := modal_rect_compute (sigT P) (fun _ => X) (fun _ => Xm) pr1).
+    apply total_path with (p := mpr1c (x ; p)).
+    simpl.
+    set (h := (fun xp : sigT P =>
+      let (x1, p0) as s return (P (mpr1 (to_modal (sigT P) s))) := xp in
+        transport (!mpr1c (x1 ; p0)) p0)).
+    path_via (transport (mpr1c (x ; p)) (h (x ; p))).
+    apply modal_rect_compute with 
+      (P := (fun mxp : modal (sigT P) => P (mpr1 mxp))).
+    unfold h.
+    apply trans_trans_opp.
+  Defined.
+
+  Program Instance modal_factsys : factsys is_modal.
+  Next Obligation.
+    unfold is_modal; intros X P Xm Pm.
+    set (xmi := (to_modal X ; Xm) ^-1).
+    set (pmi := fun x => (to_modal (P x) ; Pm x) ^-1).
+    apply @hequiv_is_equiv with (g := sig_inv X P Xm Pm).
+    apply modal_rect.
+    intros mxp'; apply paths_are_modal, modal_is_modal.
+    intros [x p].
+    apply map.
+    apply sig_inv_compute.
+    apply sig_inv_compute.
+  Defined.
+
 End Modality.
 
 (** Now we define some tactics to work automatically with
