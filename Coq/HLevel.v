@@ -193,6 +193,18 @@ Proof.
   apply H.
 Defined.
   
+(** Two propositions are equivalent as soon as there are maps in both
+   directions. *)
+
+Definition prop_iff_equiv A B : is_prop A -> is_prop B ->
+  (A -> B) -> (B -> A) -> (A <~> B).
+Proof.
+  intros A B Ap Bp f g.
+  exists f.
+  apply @hequiv_is_equiv with (g := g);
+  intros; apply prop_path; auto.
+Defined.
+
 (** Props are closed under sums (with prop base) and arbitrary
    dependent products. *)
 
