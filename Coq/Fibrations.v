@@ -203,7 +203,7 @@ Proof.
   path_induction.
 Defined.
 
-(* Transporting in a non-dependent type does nothing. *)
+(** Transporting in a non-dependent type does nothing. *)
 
 Lemma trans_trivial {A B : Type} {x y : A} (p : x == y) (z : B) :
   transport (P := fun x => B) p z == z.
@@ -211,7 +211,7 @@ Proof.
   path_induction.
 Defined.
 
-(* And for a non-dependent type, [map_dep] reduces to [map], modulo [trans_trivial]. *)
+(** And for a non-dependent type, [map_dep] reduces to [map], modulo [trans_trivial]. *)
 
 Lemma map_dep_trivial {A B} {x y : A} (f : A -> B) (p: x == y):
   map_dep f p == trans_trivial p (f x) @ map f p. 
@@ -219,7 +219,26 @@ Proof.
   path_induction.
 Defined.
 
-(* 2-Paths in a total space. *)
+(** Transporting commutes with summing along an unrelated variable. *)
+
+Definition trans_sum A B (P : A -> B -> Type)
+  (x y : A) (p : x == y) (z : B) (w : P x z) :
+  transport (P := fun a => sigT (P a)) p (z ; w) ==
+  (z ; transport (P := fun a => P a z) p w).
+Proof.
+  path_induction.
+Defined.
+
+(** And with taking fiberwise products. *)
+
+Definition trans_prod A (P Q : A -> Type) (x y : A) (p : x == y) (z : P x) (w : Q x) :
+  transport (P := fun a => (P a * Q a)%type) p (z , w) ==
+  (transport p z , transport p w).
+Proof.
+  path_induction.
+Defined.
+
+(** The action of map on a function of two variables, one dependent on the other. *)
 
 Lemma map_twovar {A : Type} {P : A -> Type} {B : Type} {x y : A} {a : P x} {b : P y}
   (f : forall x : A, P x -> B) (p : x == y) (q : transport p a == b) :
@@ -231,6 +250,8 @@ Proof.
   induction q.
   apply idpath.
 Defined.
+
+(** 2-Paths in a total space. *)
 
 Lemma total_path2 (A : Type) (P : A -> Type) (x y : sigT P)
   (p q : x == y) (r : base_path p == base_path q) :
@@ -245,4 +266,31 @@ Proof.
     (f := total_path A P x y)
     (p := r).
   assumption.
+Defined.
+
+(** Transporting along a path between paths. *)
+
+Definition trans2 {A : Type} {P : A -> Type} {x y : A} {p q : x == y}
+  (r : p == q) (z : P x) :
+  transport p z == transport q z
+  := map (fun p' => transport p' z) r.
+
+Lemma trans2_naturality {A : Type} {P : A -> Type} {x y : A} {p q : x == y}
+  {z w : P x} (r : p == q) (s : z == w) :
+  map (transport p) s @ trans2 r w == trans2 r z @ map (transport q) s.
+Proof.
+  path_induction.
+Defined.
+
+(** A dependent version of [map2]. *)
+
+Lemma map2_dep {A : Type} {P : A -> Type} {x y : A} {p q : x == y}
+  (f : forall a, P a) (r : p == q) :
+  map_dep f p
+  ==
+  trans2 r (f x)
+  @
+  map_dep f q.
+Proof.
+  path_induction.
 Defined.
