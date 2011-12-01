@@ -45,48 +45,33 @@ Instance prop_is_factsys : factsys is_prop := {
 
 Section PropViaModal.
 
-  Let modal := is_inhab.
-  Let to_modal := @inhab.
-
-  Let is_modal' := is_modal modal to_modal.
-
-  Let modal_is_modal : forall X, is_modal' (modal X).
+  Let paths_are_props : forall X (x0 x1 : X),
+    is_prop X -> is_prop (x0 == x1).
   Proof.
-    intros X; unfold is_modal', is_modal.
-    apply prop_inhab_is_equiv, is_inhab_is_prop.
+    intros X x0 x1 Xp; apply hlevel_succ; unfold is_hlevel; apply Xp.
   Defined.
 
-  Let paths_are_modal : forall X (x0 x1 : X),
-    is_modal' X -> is_modal' (x0 == x1).
-  Proof.
-    intros; apply prop_inhab_is_equiv.
-    apply hlevel_succ; unfold is_hlevel.
-    apply (prop_inhab_equiv _ ^-1); auto.
-  Defined.
-
-  Let modal_rect : forall X (P : modal X -> Type),
-    (forall mx, is_equiv (to_modal (P mx))) ->
-    (forall x, P (to_modal X x)) -> (forall mx, P mx).
+  Let modal_rect : forall X (P : is_inhab X -> Type),
+    (forall mx, is_prop (P mx)) ->
+    (forall x, P (inhab x)) -> (forall mx, P mx).
   Proof.
     intros; apply is_inhab_rect;
-      [ auto | intros; apply prop_path, (prop_inhab_equiv _ ^-1); auto ].
+      [ auto | intros; apply prop_path; auto ].
   Defined.
 
-  Let modal_rect_compute : forall X (P : modal X -> Type)
-    (Pm : forall mx, is_equiv (to_modal (P mx))) (f : forall x, P (to_modal X x)),
-    (forall x, modal_rect X P Pm f (to_modal X x) == f x).
+  Let modal_rect_compute : forall X (P : is_inhab X -> Type)
+    (Pm : forall mx, is_prop (P mx)) (f : forall x, P (inhab x)),
+    (forall x, modal_rect X P Pm f (inhab x) == f x).
   Proof.
-    intros; apply prop_path, (prop_inhab_equiv _ ^-1); auto.
+    intros; apply prop_path; auto.
   Defined.
 
-  Instance prop'_is_rsf : rsf (is_modal is_inhab (@inhab))
-  := (modal_rsf modal to_modal
-    modal_is_modal paths_are_modal
-    modal_rect modal_rect_compute).
+  Instance prop_is_rsf' : rsf is_prop
+  := (modal_rsf is_prop (@isprop_isprop) is_inhab (@inhab)
+    is_inhab_is_prop paths_are_props modal_rect modal_rect_compute).
 
-  Instance prop'_is_factsys : factsys (is_modal is_inhab (@inhab))
-    := (modal_factsys modal to_modal
-      modal_is_modal paths_are_modal
-      modal_rect modal_rect_compute).
+  Instance prop_is_factsys' : @factsys is_prop prop_is_rsf'
+    := (modal_factsys is_prop (@isprop_isprop) is_inhab (@inhab)
+    is_inhab_is_prop paths_are_props modal_rect modal_rect_compute).
 
 End PropViaModal.

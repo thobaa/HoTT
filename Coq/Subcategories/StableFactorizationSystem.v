@@ -146,20 +146,19 @@ End FactorizationSystem1.
    property of "reflectedness".  It can also be described as a sort of
    "higher modality" which acts on types in addition to propositions.
 
-   For good measure, we also exploit the fact that [in_rsc] can be
-   recovered, up to equivalence, from [reflect] and [to_reflect].  We
-   do, however, need to assert separately that the reflector takes
+   We do, however, need to assert separately that the reflector takes
    values in the subcategory, and that the subcategory is closed under
-   path-spaces.  (Any chance those hypotheses can be eliminated?)
-   *)
+   path-spaces.  (Any chance those hypotheses can be eliminated?)  *)
 
 Section Modality.
+
+  Hypothesis is_modal : Type -> Type.
+
+  Hypothesis is_modal_is_prop : forall X, is_prop (is_modal X).
 
   Hypothesis modal : Type -> Type.
 
   Hypothesis to_modal : forall X, X -> modal X.
-
-  Definition is_modal X := is_equiv (to_modal X).
 
   Hypothesis modal_is_modal : forall X, is_modal (modal X).
 
@@ -167,16 +166,16 @@ Section Modality.
     is_modal X -> is_modal (x0 == x1).
 
   Hypothesis modal_rect : forall X (P : modal X -> Type),
-    (forall mx, is_equiv (to_modal (P mx))) ->
+    (forall mx, is_modal (P mx)) ->
     (forall x, P (to_modal X x)) -> (forall mx, P mx).
 
   Hypothesis modal_rect_compute : forall X (P : modal X -> Type)
-    (Pm : forall mx, is_equiv (to_modal (P mx))) (f : forall x, P (to_modal X x)),
+    (Pm : forall mx, is_modal (P mx)) (f : forall x, P (to_modal X x)),
     (forall x, modal_rect X P Pm f (to_modal X x) == f x).
 
   Program Instance modal_rsf : rsf (is_modal).
   Next Obligation.
-    intros; apply is_equiv_is_prop.
+    apply is_modal_is_prop.
   Defined.
   Next Obligation.
     exact modal.
@@ -242,15 +241,10 @@ Section Modality.
 
   Program Instance modal_factsys : factsys is_modal.
   Next Obligation.
-    unfold is_modal; intros X P Xm Pm.
-    set (xmi := (to_modal X ; Xm) ^-1).
-    set (pmi := fun x => (to_modal (P x) ; Pm x) ^-1).
-    apply @hequiv_is_equiv with (g := sig_inv X P Xm Pm).
-    apply modal_rect.
-    intros mxp'; apply paths_are_modal, modal_is_modal.
-    intros [x p].
-    apply map.
-    apply sig_inv_compute.
+    intros X P Xm Pm.
+    set (xmi := (in_rsc_reflect_equiv X Xm) ^-1).
+    set (pmi := fun x => (in_rsc_reflect_equiv (P x) (Pm x)) ^-1).
+    apply reflect_retract_in_rsc with (r := sig_inv X P Xm Pm).
     apply sig_inv_compute.
   Defined.
 
@@ -410,6 +404,12 @@ Section FactorizationSystem2.
     apply (pr2 f). auto.
   Defined.
 
+  (** Including any identity. *)
+  Definition idEmap A : Emap A A.
+  Proof.
+    apply equiv_Emap, idequiv.
+  Defined.
+
   (** Likewise, any equivalence is in M. *)
   Definition equiv_Mmap {X Y} (f : X <~> Y) : Mmap X Y.
   Proof.
@@ -419,6 +419,12 @@ Section FactorizationSystem2.
     apply opposite, equiv_to_path, contr_equiv_unit.
     apply (pr2 f).
     auto.
+  Defined.
+
+  (** Including any identity. *)
+  Definition idMmap A : Mmap A A.
+  Proof.
+    apply equiv_Mmap, idequiv.
   Defined.
 
   (** Any map between objects in the subcategory is in M. *)
@@ -686,6 +692,22 @@ Section FactorizationSystem2.
     apply @transport with (x := reflect_functor f).
     simpl. apply opposite, reflect_factor_functor.
     apply E_inverted.
+  Defined.
+
+  (** And an E-map between objects in the subcategory is already an
+  equivalence. *)
+  Definition in_rsc_in_E_is_equiv A B (f : A -> B) :
+    in_rsc A -> in_rsc B -> in_E f -> is_equiv f.
+  Proof.
+    intros Ar Br fe.
+    set (feq := equiv_compose (in_rsc_reflect_equiv A Ar)
+      (Emap_invert_factor A B (f;fe) Br)).
+    assert (p : pr1 feq == f).
+    apply funext; intros a. unfold feq; simpl; unfold compose.
+    apply reflect_factor_factors.
+    apply @transport with (x := pr1 feq).
+    assumption.
+    apply (pr2 feq).
   Defined.
 
   (** In particular, that means that given an E-map between any two
