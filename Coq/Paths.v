@@ -295,18 +295,51 @@ Definition happly_dep {A} {P : A -> Type} {f g : forall x, P x} :
   (f == g) -> (forall x, f x == g x) :=
   fun p x => map (fun h => h x) p.
 
+(** [happly] preserves path-concatenation and opposites. *)
+
+Lemma happly_concat A B (f g h : A -> B) (p : f == g) (q : g == h) (x:A) :
+  happly (p @ q) x == happly p x @ happly q x.
+Proof.
+  path_induction.
+Defined.
+
+Lemma happly_opp A B (f g : A -> B) (p : f == g) (x : A) :
+  happly (!p) x == !happly p x.
+Proof.
+  path_induction.
+Defined.
+
+Lemma happly_dep_concat A P (f g h : forall a:A, P a) (p : f == g) (q : g == h) (x:A) :
+  happly_dep (p @ q) x == happly_dep p x @ happly_dep q x.
+Proof.
+  path_induction.
+Defined.
+
+Lemma happly_dep_opp A P (f g : forall a:A, P a) (p : f == g) (x : A) :
+  happly_dep (!p) x == !happly_dep p x.
+Proof.
+  path_induction.
+Defined.
+
 (** How happly interacts with map. *)
 
-Lemma map_precompose {A B C} (f : B -> C) (g : B -> C) (h : A -> B)
+Lemma map_precompose {A B C} (f g : B -> C) (h : A -> B)
   (p : f == g) (a : A) :
   happly (map (fun f' => f' o h) p) a == happly p (h a).
 Proof.
   path_induction.
 Defined.
 
-Lemma map_postcompose {A B C} (f : A -> B) (g : A -> B) (h : B -> C)
+Lemma map_postcompose {A B C} (f g : A -> B) (h : B -> C)
   (p : f == g) (a : A) :
   happly (map (fun f' => h o f') p) a == map h (happly p a).
+Proof.
+  path_induction.
+Defined.
+
+Lemma map_precompose_dep {A B P} (f g : forall b:B, P b) (h : A -> B)
+  (p : f == g) (a : A) :
+  happly_dep (map (fun f' => fun a => f' (h a)) p) a == happly_dep p (h a).
 Proof.
   path_induction.
 Defined.
