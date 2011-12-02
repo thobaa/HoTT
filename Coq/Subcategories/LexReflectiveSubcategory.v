@@ -212,4 +212,168 @@ Section LexReflective.
 
   End ReflectPullbacks.
 
+  (** The classifier of objects in the subcategory *)
+
+  Definition Rsctype := { A : Type & in_rsc A }.
+
+  Definition rsctype_coerce_to_type : Rsctype -> Type := pr1.
+  Coercion rsctype_coerce_to_type : Rsctype >-> Sortclass.
+
+  Definition every_rsctype_in_rsc (A : Rsctype) : in_rsc A.
+  Proof.
+    exact (pr2 A).
+  Defined.
+  
+  Hint Resolve every_rsctype_in_rsc.
+
+  Definition rsctype_paths (A B : Rsctype) :
+    (pr1 A) == (pr1 B) -> A == B.
+  Proof.
+    intros p; apply total_path with p.
+    apply prop_path, in_rsc_prop.
+  Defined.
+
+  (** We now prove that [Rsctype] itself lies in the subcategory.  To
+     do this, we show that any map into it can be extended along any
+     E-map.  Applied to [to_reflect Rsctype] this will show the
+     desired result (using [reflect_retract_in_rsc]). *)
+
+  Section RsctypeExtend.
+
+    Hypothesis A B : Type.
+    Hypothesis e : Emap A B.
+    Hypothesis P : A -> Rsctype.
+
+    Close Scope nat_scope.      (* So we can use [*] for cartesian products. *)
+
+    (** The extension is easy to define. *)
+    Definition rscfib_Emap_extend : B -> Rsctype.
+    Proof.
+      intros b.
+      exists (reflect {a:A & (e a == b) * (P a)}).
+      auto.
+    Defined.
+
+    (** The tricky part is proving that it *is* an extension,
+       i.e. that when restricted back along [e] it yields something
+       equivalent to [P] again.  We do this by showing that the
+       following map is an equivalence for all [a]. *)
+
+    Let extend_cmp a : P a -> rscfib_Emap_extend (e a).
+    Proof.
+      intros p.
+      unfold rscfib_Emap_extend, rsctype_coerce_to_type; simpl.
+      apply to_reflect.
+      exists a. exact (idpath (e a), p).
+    Defined.
+
+    (** We will show that [extend_cmp] is an equivalence by showing
+       that it is [in_E]; this suffices because its domain and
+       codomain are both [in_rsc].
+
+       In turn, we will show it to be [in_E] by showing that its
+       induced map on total spaces lies [in_E].  Here is that map; it
+       goes from the total space of [P] to the total space of the
+       _pullback_ of [rscfib_Emap_extend] from [B] to [A].  *)
+
+    Let extend_cmp_tot := total_map (idmap A) extend_cmp
+      : sigT P -> {a:A & rscfib_Emap_extend (e a)}.
+
+    (** We will show that [extend_cmp_tot] lies in E by left
+       cancellation, composing with maps to the total space of
+       [rscfib_Emap_extend] itself.  Here is the first of these. *)
+
+    Let extend_next1 : Emap {a:A & rscfib_Emap_extend (e a)} (sigT rscfib_Emap_extend).
+    Proof.
+      apply total_emap_fib with (f := e).
+      intros; apply idEmap.
+    Defined.
+
+    (** The second of these is the composite of two maps, where the
+       intermediate type is the total space of which
+       [rscfib_Emap_extend] is the fiberwise reflection.  The map from
+       [sigT P] to this total space is actually already an
+       equivalence; here it is and its inverse.
+       *)
+
+    Let extend_next2a1 : (sigT P) -> {b:B & {a:A & (e a == b) * P a}}.
+    Proof.
+      intros [a p]; exists (e a); exists a; split; [exact (idpath (e a)) | assumption].
+    Defined.
+
+    Let extend_next2a2 : {b:B & {a:A & (e a == b) * P a}} -> (sigT P).
+    Proof.
+      intros [b [a [q p]]]; exists a; assumption.
+    Defined.
+
+    Let extend_next2a : Emap (sigT P) {b:B & {a:A & (e a == b) * P a}}.
+    Proof.
+      apply equiv_Emap.
+      exists extend_next2a1.
+      apply @hequiv_is_equiv with (g := extend_next2a2).
+      intros [b [a [q p]]]; simpl.
+      (* boring manipulation... *)
+      apply total_path with q. simpl.
+      apply (concat (trans_sum B A (fun b' a' => (e a' == b') * P a')
+        (e a) b q a (idpath (e a), p))).
+      apply total_path with (idpath a). simpl.
+      path_via (transport q (idpath (e a)), transport (P := fun _ => P a) q p).
+      refine (trans_prod _ (fun b' => e a == b') (fun _:B => P a) _ _ _ _ _).
+      apply prod_path.
+      path_via (idpath (e a) @ q).
+      apply trans_is_concat.
+      apply trans_trivial.
+      intros [x p]; simpl; auto.
+    Defined.
+
+    (** Now we compose this equivalence with its fiberwise reflection. *)
+
+    Let extend_next2 : Emap (sigT P) (sigT rscfib_Emap_extend).
+    Proof.
+      apply @Emap_compose with (Y := {b:B & {a:A & (e a == b) * P a}}).
+      auto.
+      apply extend_next2a.
+      apply total_emap_fib with (f := idEmap B).
+      intros b.
+      exists (to_reflect _).
+      refine (to_reflect_in_E _).
+    Defined.
+
+    (** And prove that [extend_cmp_tot] actually does factor the one
+       through the other. *)
+
+    Let extend_next_composite :
+      extend_next1 o extend_cmp_tot == extend_next2.
+    Proof.
+      apply funext; intros [a p].
+      unfold extend_next1, extend_cmp_tot, extend_next2. simpl.
+      unfold total_map, idmap, compose.
+      auto.
+    Defined.
+
+    (** Finally, we can put it all together, as promised. *)
+
+    Definition rscfib_Emap_extend_compute a : rscfib_Emap_extend (e a) == P a.
+    Proof.
+      apply opposite, rsctype_paths, equiv_to_path; simpl.
+      exists (extend_cmp a).
+      apply in_rsc_in_E_is_equiv.
+      apply (pr2 (P a)). auto.
+      assert (ectinE : in_E extend_cmp_tot).
+      apply Emap_cancel_left with (g := extend_next1).
+      refine (@transport _ _ _ _ (!extend_next_composite) _).
+      apply (pr2 extend_next2).
+      refine (fiber_map_ine_fib _ _ _ _ (idEmap A) extend_cmp ectinE a).
+    Defined.
+
+  End RsctypeExtend.
+
+  Theorem rsctype_in_rsc : in_rsc Rsctype.
+  Proof.
+    apply reflect_retract_in_rsc with (rscfib_Emap_extend
+      Rsctype (reflect Rsctype) (to_reflect_Emap Rsctype) (idmap _)).
+    apply (rscfib_Emap_extend_compute
+      Rsctype (reflect Rsctype) (to_reflect_Emap Rsctype) (idmap _)).
+  Defined.
+
 End LexReflective.
