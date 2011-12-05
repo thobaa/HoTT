@@ -668,4 +668,74 @@ Section ReflectiveSubfibration.
 
   End PreservesProducts.
 
+  (** We also have dependent factorization (a "dependent eliminator"),
+     if we are eliminating into a dependent type whose total space is
+     in the subcategory.  We call this "weak dependent factor" since
+     it is much less useful than the strong consequence which holds
+     for a stable factorization system, in which only the fibers of
+     the target are required (a priori) to lie in the subcategory.  *)
+
+  Section DependentFactor.
+
+    Hypothesis X : Type.
+    Hypothesis P : reflect X -> Type.
+    Hypothesis Pr : in_rsc (sigT P).
+    Hypothesis f : forall x, P (to_reflect X x).
+
+    Let fdep (x:X) : sigT P := (to_reflect X x; f x).
+
+    Let rfdep : reflect X -> sigT P.
+    Proof.
+      apply reflect_factor; auto.
+    Defined.
+
+    Let rfdep_factors (x:X) : rfdep (to_reflect X x) == fdep x.
+    Proof.
+      apply @reflect_factor_factors with (f := fdep).
+    Defined.
+
+    Let rfdep_section (rx : reflect X) : pr1 (rfdep rx) == rx.
+    Proof.
+      path_via (reflect_factor (reflect_in_rsc X) (pr1 o fdep) rx).
+      apply reflect_factoriality_pre.
+      unfold compose; simpl.
+      apply @reflect_factor_unfactors with (f := idmap (reflect X)).
+    Defined.
+
+    Let rfdep_section_factors (x:X) :
+      rfdep_section (to_reflect X x) == map pr1 (rfdep_factors x).
+    Proof.
+      unfold rfdep_factors, rfdep_section.
+      apply @concat with (y := reflect_factoriality_pre
+        Pr
+        (reflect_in_rsc X) pr1 fdep (to_reflect X x)
+        @
+        reflect_factor_factors (reflect_in_rsc X)
+        (idmap _ o to_reflect X) x).
+      apply whisker_left.
+      apply reflect_factor_factunfact.
+      unfold compose, idmap.
+      apply @reflect_factoriality_pre_factors with
+        (f := fdep).
+    Defined.
+
+    Definition reflect_factor_weakdep : (forall rx, P rx).
+    Proof.
+      intros rx.
+      apply (transport (rfdep_section rx)).
+      exact (pr2 (rfdep rx)).
+    Defined.
+
+    Definition reflect_factor_weakdep_factors (x:X) :
+      reflect_factor_weakdep (to_reflect X x) == f x.
+    Proof.
+      unfold reflect_factor_weakdep.
+      path_via (transport (map pr1 (rfdep_factors x))
+        (pr2 (rfdep (to_reflect X x)))).
+      apply happly, map, rfdep_section_factors.
+      apply fiber_path with (p := rfdep_factors x).
+    Defined.
+
+  End DependentFactor.
+
 End ReflectiveSubfibration.
