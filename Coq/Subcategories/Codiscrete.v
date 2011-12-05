@@ -209,15 +209,17 @@ Ltac sharp_compute_in s :=
         set (h := f0);
           let mid := context cxt[h x0] in
             path_via' mid;
-            [ repeat apply_happly;
+            [ repeat progress first [
               apply @reflect_factor_dep_factors with
                 (X := X0) (P := P0) (Pr := Pr0) (f := f0) (x := x0)
+              | apply_happly ]
               | unfold h; clear h ]
     | context cxt [(@equiv_coerce_to_function _ _ (@ehom_compute _ _)
       (inverse (@ehom_compute _ _) ?f))] =>
     let mid := context cxt [ f ] in
+      let x := fresh in spath_using mid x inverse_is_section
       (* Now we do a version of the tactic path_using that also calls apply_happly. *)
-      apply @concat with (y := mid);
+(*      apply @concat with (y := mid);
         repeat progress first [
           apply inverse_is_section
           | apply opposite; apply inverse_is_section
@@ -226,7 +228,7 @@ Ltac sharp_compute_in s :=
           | apply @map
           | apply_happly
           | apply funext; let x := fresh in intros x
-        ]; auto with path_hints
+        ]; auto with path_hints*)
   end.
 
 Ltac sharp_compute :=

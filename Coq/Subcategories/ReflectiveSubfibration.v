@@ -27,20 +27,34 @@ Class rsf (in_rsc : Type -> Type) := {
    variant of [path_simplify] which also applies [happly] and
    [happly_dep]. *)
 
-Ltac fpath_simplify := repeat progress first [
-    apply whisker_left
-  | apply whisker_right
-  | apply @map
-  | apply_happly
-]; auto with path_hints.
+Ltac fpath_simplify :=
+  repeat progress first [
+      apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | apply_happly
+  ]; auto with path_hints.
 
-(** And corresponding versions of [path_via] and [path_change].  It
-   would be nice if we could define a new version of [path_using] and
-   then teach all the other tactics from "Paths.v" to use the new one
-   instead, but I don't know how to do that. *)
+Ltac fpath_simplify' lem :=
+  repeat progress first [
+      apply lem
+    | apply opposite; apply lem
+    | apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | apply_happly
+  ]; auto with path_hints.
+
+(** And corresponding versions of [path_via], [path_using], and
+   [path_change].  It would be nice if we could teach all the other
+   tactics from "Paths.v" to use [fpath_using] instead of
+   [path_using], but I don't know how to do that. *)
 
 Ltac fpath_via mid :=
   apply @concat with (y := mid); fpath_simplify.
+
+Ltac fpath_using mid lem :=
+  apply @concat with (y := mid); fpath_simplify' lem.
 
 Ltac fpath_change mid :=
   match goal with
@@ -52,22 +66,58 @@ Ltac fpath_change mid :=
    path between functions.  Here are versions that do the reverse,
    using funext. *)
 
-Ltac apath_simplify name := repeat progress first [
-    apply whisker_left
-  | apply whisker_right
-  | apply @map
-  | apply funext; let x := fresh name in intros x
-  | apply funext_dep; let x := fresh name in intros x
-]; auto with path_hints.
+Ltac apath_simplify name :=
+  repeat progress first [
+      apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | apply funext; let x := fresh name in intros x
+    | apply funext_dep; let x := fresh name in intros x
+  ]; auto with path_hints.
+
+Ltac apath_simplify' name lem :=
+  repeat progress first [
+      apply lem
+    | apply opposite; apply lem
+    | apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | apply funext; let x := fresh name in intros x
+    | apply funext_dep; let x := fresh name in intros x
+  ]; auto with path_hints.
 
 Ltac apath_via mid name :=
   apply @concat with (y := mid); apath_simplify name.
+
+Ltac apath_using mid name lem :=
+  apply @concat with (y := mid); apath_simplify' name lem.
 
 Ltac apath_change mid name :=
   match goal with
     |- ?source == ?target =>
       first [ change (source == mid) | change (mid == target) ]
   end; apath_simplify name.
+
+(** And tactics that do both.  These are dangerous, because
+   [apply_happly] and [apply funext] can go into a loop.  They should
+   only be called when you are positive that [lem] will solve the
+   goal.  *)
+
+Ltac spath_simplify' name lem :=
+  repeat progress first [
+      apply lem
+    | apply opposite; apply lem
+    | apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | apply_happly
+    | apply funext; let x := fresh name in intros x
+    | apply funext_dep; let x := fresh name in intros x
+  ]; auto with path_hints.
+
+Ltac spath_using mid name lem :=
+  apply @concat with (y := mid); spath_simplify' name lem.
+
 
 
 (** Package up the factorization equivalence as an 'equiv' object. *)
@@ -142,19 +192,14 @@ Section ReflectiveSubfibration.
   Definition reflect_factor_factors {X Y} (Yr : in_rsc Y) (f : X -> Y) (x : X) :
     reflect_factor Yr f (to_reflect X x) == f x.
   Proof.
-    unfold reflect_factor.
-    path_via ((reflection_equiv X Y Yr (reflection_equiv X Y Yr ^-1 f)) x).
-    apply happly.
-    cancel_inverses.
+    unfold reflect_factor; find_refleqv.
   Defined.
 
   Definition reflect_factor_unfactors {X Y} (Yr : in_rsc Y)
     (f : reflect X -> Y) (rx : reflect X) :
     reflect_factor Yr (f o to_reflect X) rx == f rx.
   Proof.
-    path_via ((reflection_equiv X Y Yr ^-1) (reflection_equiv X Y Yr f) rx).
-    apply happly.
-    cancel_inverses.
+    unfold reflect_factor; find_refleqv.
   Defined.
 
   Definition reflect_factor_factunfact {X Y} (Yr : in_rsc Y)
@@ -163,17 +208,15 @@ Section ReflectiveSubfibration.
     reflect_factor_factors Yr (f o to_reflect X) x.
   Proof.
     unfold reflect_factor_unfactors, reflect_factor_factors.
-    cancel_units.
-    apply_happly; apply map; cancel_units.
-    path_via (happly (map (reflection_equiv X Y Yr)
+    cancel_units; fpath_simplify.
+    fpath_via (happly (map (reflection_equiv X Y Yr)
       (inverse_is_retraction (reflection_equiv X Y Yr) f))
     x).
-    unfold happly. undo_compose_map.
-    apply_happly; apply map.
+    unfold happly.
+    undo_compose_map.
     apply @inverse_triangle with
       (w := (reflection_equiv X Y Yr))
       (x := f).
-    apply_happly; apply map; cancel_units.
   Defined.
 
   Definition reflect_factor_constant {X Y} (Yr : in_rsc Y) (y : Y) (rx : reflect X) :
@@ -182,7 +225,7 @@ Section ReflectiveSubfibration.
     unfold reflect_factor.
     apply @happly with (g := fun _ => y).
     equiv_moveright.
-    apply funext. intros x. auto.
+    fpath_simplify.
   Defined.
 
   (** The reflector is a functor. *)
@@ -202,13 +245,7 @@ Section ReflectiveSubfibration.
     apply equiv_injective with
       (w := reflection_equiv X (reflect Y) (reflect_in_rsc Y)).
     simpl.
-    path_via (to_reflect Y o
-      (reflection_equiv X Y Yr ((reflection_equiv X Y Yr ^-1) f))).
-    cancel_inverses.
-    path_via (reflection_equiv X (reflect Y) (reflect_in_rsc Y)
-      ((reflection_equiv X (reflect Y) (reflect_in_rsc Y) ^-1)
-        (to_reflect Y o f))).
-    cancel_inverses.
+    repeat find_refleqv.
   Defined.
 
   (** The following lemmas are all manifestations of functoriality. *)
@@ -217,15 +254,12 @@ Section ReflectiveSubfibration.
     (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
     g (reflect_factor Yr f rx) == reflect_factor Zr (g o f) rx.
   Proof.
-    unfold reflect_factor.
-    path_via ((g o ((reflection_equiv X Y Yr ^-1) f)) rx).
-    apply happly.
+    unfold reflect_factor; fpath_simplify.
     apply @equiv_map_inv with (f := reflection_equiv X Z Zr).
     cancel_inverses.
-    path_via ((g o (reflection_equiv X Y Yr ^-1) f) o to_reflect X).
-    path_via (g o ((reflection_equiv X Y Yr ^-1) f o to_reflect X)).
-    path_via (reflection_equiv X Y Yr ((reflection_equiv X Y Yr ^-1) f)).
-    cancel_inverses.
+    path_change ((g o (reflection_equiv X Y Yr ^-1) f) o to_reflect X).
+    path_change (g o ((reflection_equiv X Y Yr ^-1) f o to_reflect X)).
+    find_refleqv.
   Defined.
 
   Definition reflect_factoriality_post {X Y Z} (Zr : in_rsc Z)
@@ -238,11 +272,9 @@ Section ReflectiveSubfibration.
     apply reflect_factoriality_pre.
     apply happly.
     apply map.
-    path_via ((reflect_factor Zr g o to_reflect Y) o f).
+    path_change ((reflect_factor Zr g o to_reflect Y) o f).
     apply @map with (f := fun g' => g' o f).
-    unfold reflect_factor.
-    path_via (reflection_equiv Y Z Zr ((reflection_equiv Y Z Zr ^-1) g)).
-    cancel_inverses.
+    unfold reflect_factor; find_refleqv.
   Defined.
 
   Definition reflect_functoriality {X Y Z} (g : Y -> Z) (f : X -> Y) (rx : reflect X) :
@@ -268,28 +300,26 @@ Section ReflectiveSubfibration.
     map g (reflect_factor_factors Yr f x).
   Proof.
     unfold reflect_factoriality_pre, reflect_factor_factors.
-    cancel_units; try (apply_happly; repeat apply map; cancel_units).
-    moveright_onright.
-    path_via (happly
+    cancel_units; try fpath_simplify.
+    set (q := happly (inverse_is_section (reflection_equiv X Z Zr) (g o f)) x).
+    path_via ((happly
       (equiv_map_equiv (reflection_equiv X Z Zr)
         (equiv_map_equiv
           (x := (g o (reflection_equiv X Y Yr ^-1) f))
           (reflection_equiv X Z Zr) ^-1
           (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
-            !inverse_is_section (reflection_equiv X Z Zr) (g o f)))) x).
+            !inverse_is_section (reflection_equiv X Z Zr) (g o f)))) x) @ q).
     apply opposite.
-    apply map_precompose with
-      (h := to_reflect X)
-      (p := (equiv_map_inv (reflection_equiv X Z Zr)
+    refine (map_precompose _ _ (to_reflect X)
+      (equiv_map_inv (reflection_equiv X Z Zr)
           (x := (g o (reflection_equiv X Y Yr ^-1) f))
         (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
-         !inverse_is_section (reflection_equiv X Z Zr) (g o f))))
-      (a := x).
-    path_via (happly (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
-      !inverse_is_section (reflection_equiv X Z Zr) (g o f)) x).
-    apply_happly; apply map; cancel_inverses.
-    moveleft_onright.
-    unfold happly.
+         !inverse_is_section (reflection_equiv X Z Zr) (g o f)))
+      x).
+    fpath_via (happly (map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
+      !inverse_is_section (reflection_equiv X Z Zr) (g o f)) x @ q).
+    cancel_inverses.
+    unfold happly, q; clear q.
     path_via (map (fun h : X -> Z => h x)
       ((map (compose g) (inverse_is_section (reflection_equiv X Y Yr) f) @
         !inverse_is_section (reflection_equiv X Z Zr) (g o f)) @ 
@@ -321,17 +351,12 @@ Section ReflectiveSubfibration.
     intros ry.
     path_via (reflect_functor (feq o inverse feq) ry).
     apply reflect_functoriality.
-    path_via (reflect_functor (@id Y) ry).
-    apply @map with (f := fun g => reflect_functor g ry).
-    apply funext. intros x.
-    apply inverse_is_section.
+    spath_using (reflect_functor (@id Y) ry) Z @inverse_is_section.
     apply reflect_functoriality_id.
     intros rx.
     path_via (reflect_functor (inverse feq o feq) rx).
     apply reflect_functoriality.
-    path_via (reflect_functor (@id X) rx).
-    apply @map with (f := fun g => reflect_functor g rx).
-    apply funext. intros x. apply inverse_is_retraction.
+    spath_using (reflect_functor (@id X) rx) Z @inverse_is_retraction.
     apply reflect_functoriality_id.
   Defined.
 
@@ -373,9 +398,8 @@ Section ReflectiveSubfibration.
   (** If the unit at X is an equivalence, then X is in the subcategory. *)
   Definition reflect_equiv_in_rsc X : is_equiv (to_reflect X) -> in_rsc X.
     intros H.
-    set (eqvpath := equiv_to_path (to_reflect X ; H)).
     apply @transport with (P := in_rsc) (x := reflect X).
-    exact (!eqvpath).
+    exact (!equiv_to_path (to_reflect X ; H)).
     apply reflect_in_rsc.
   Defined.
 
@@ -387,15 +411,14 @@ Section ReflectiveSubfibration.
     apply reflect_equiv_in_rsc.
     apply hequiv_is_equiv with (g := r).
     intros y.
-    assert (p : to_reflect X o r == @id (reflect X)).
+    path_change (@id _ y).
+    apply_happly.
     apply equiv_injective with
       (w := reflection_equiv X (reflect X) (reflect_in_rsc X)).
     simpl.
-    path_via (to_reflect X o (@id X)).
-    path_via (to_reflect X o (r o to_reflect X)).
-    apply funext.
-    exact h.
-    exact (happly p y).
+    path_change (to_reflect X o (@id X)).
+    path_change (to_reflect X o (r o to_reflect X)).
+    apply funext; exact h.
     assumption.
   Defined.
 
@@ -407,17 +430,14 @@ Section ReflectiveSubfibration.
     apply hequiv_is_equiv with (g := reflect_factor H (@id X)).
     intros y.
     unfold reflect_factor.
-    assert (p : to_reflect X o ((reflection_equiv X X H ^-1) (@id X))
-      == @id (reflect X)).
+    path_change (@id _ y); apply_happly.
     apply equiv_injective with
       (w := reflection_equiv X (reflect X) (reflect_in_rsc X)).
     simpl.
-    path_via (to_reflect X o (@id X)).
-    path_via (to_reflect X o ((reflection_equiv X X H ^-1) (@id X) o to_reflect X)).
+    path_change (to_reflect X o (@id X)).
+    path_change (to_reflect X o ((reflection_equiv X X H ^-1) (@id X) o to_reflect X)).
     exact (inverse_is_section (reflection_equiv X X H) (@id X)).
-    exact (happly p y).
-    intros x.
-    exact (happly (inverse_is_section (reflection_equiv X X H) (@id X)) x).
+    exact (happly (inverse_is_section (reflection_equiv X X H) (@id X))).
   Defined.
 
   (** The unit is inverted by the reflector. *)
@@ -497,10 +517,9 @@ Section ReflectiveSubfibration.
               ((fun _ => x0) o to_reflect _)
               ((fun _ => x1) o to_reflect _)
               (fun l : x0 == x1 => l)))) x).
-    (* Apparently the cancel_inverses tactic is insufficiently smart. *)
-      cancel_inverses.
-      apply map with (f := fun g => happly g x).
-      cancel_inverses.
+    (* Here is where it would be nice to teach [cancel_inverses] to
+       use [fpath_using]. *)
+      cancel_inverses; fpath_simplify; cancel_inverses.
       unfold funext.
       apply strong_funext_compute with
         (f := ((fun _ => x0) o to_reflect _))
@@ -610,10 +629,11 @@ Section ReflectiveSubfibration.
     == to_reflect Z (f x y).
   Proof.
     unfold reflect_functor2, reflect_factor2.
-    path_via ((reflect_factor (reflect_in_rsc Z)
+    fpath_via ((reflect_factor (reflect_in_rsc Z)
       (fun y0 => to_reflect Z (f x y0))) (to_reflect Y y)).
-    apply happly, map, reflect_factor_factors.
-    apply @reflect_factor_factors with (f := (fun y0 : Y => to_reflect Z (f x y0))).
+    apply reflect_factor_factors.
+    apply @reflect_factor_factors with
+      (f := (fun y0 : Y => to_reflect Z (f x y0))).
   Defined.
 
   (** And to prove that the reflector preserves finite products. *)
@@ -640,45 +660,33 @@ Section ReflectiveSubfibration.
       { e : forall C (Cr : in_rsc C), (reflect A * reflect B -> C) <~> (A * B -> C) &
         ((forall C Cr f a b, e C Cr f (a,b) == f (to_reflect A a, to_reflect B b)) *
         (forall C Cr D Dr f (g:C->D), g o (e C Cr f) == e D Dr (g o f)))%type }.
-    Proof.
+    Proof with (intros; simpl; auto).
     (* reflect A -> reflect B -> C *)
       set (e1 := fun C => curry_equiv (reflect A) (reflect B) C).
-      assert (v1 : forall C f ra rb, e1 C f ra rb == f (ra,rb)).
-      intros; simpl; auto.
-      assert (n1 : forall C D f (g:C->D), (fun a => g o ((e1 C f) a)) == e1 D (g o f)).
-      intros; simpl; auto.
+      assert (v1 : forall C f ra rb, e1 C f ra rb == f (ra,rb))...
+      assert (n1 : forall C D f (g:C->D), (fun a => g o ((e1 C f) a)) == e1 D (g o f))...
       (* A -> reflect B -> C *)
       set (e2 := fun C (Cr:in_rsc C) => reflection_equiv A (reflect B -> C)
         (exp_in_rsc _ _ (fun _ => Cr))).
-      assert (v2 : forall C Cr f a rb, e2 C Cr f a rb == f (to_reflect A a) rb).
-      intros; simpl; auto.
-      assert (n2 : forall C Cr D Dr f (g:C->D), (fun a => g o ((e2 C Cr f) a)) == e2 D Dr (fun ra => g o (f ra))).
-      intros; simpl; auto.
+      assert (v2 : forall C Cr f a rb, e2 C Cr f a rb == f (to_reflect A a) rb)...
+      assert (n2 : forall C Cr D Dr f (g:C->D), (fun a => g o ((e2 C Cr f) a)) == e2 D Dr (fun ra => g o (f ra)))...
       (* reflect B -> A -> C *)
       set (e3 := fun C => flip_equiv A (reflect B) C).
-      assert (v3 : forall C f a rb, e3 C f rb a == f a rb).
-      intros; simpl; auto.
-      assert (n3 : forall C D f (g:C->D), (fun a => g o ((e3 C f) a)) == e3 D (fun a => g o (f a))).
-      intros; simpl; auto.
+      assert (v3 : forall C f a rb, e3 C f rb a == f a rb)...
+      assert (n3 : forall C D f (g:C->D), (fun a => g o ((e3 C f) a)) == e3 D (fun a => g o (f a)))...
       (* B -> A -> C *)
       set (e4 := fun C (Cr:in_rsc C) => reflection_equiv B (A -> C)
         (exp_in_rsc _ _ (fun _ => Cr))).
-      assert (v4 : forall C Cr f b a, e4 C Cr f b a == f (to_reflect B b) a).
-      intros; simpl; auto.
-      assert (n4 : forall C Cr D Dr f (g:C->D), (fun b => g o ((e4 C Cr f) b)) == e4 D Dr (fun rb => g o (f rb))).
-      intros; simpl; auto.
+      assert (v4 : forall C Cr f b a, e4 C Cr f b a == f (to_reflect B b) a)...
+      assert (n4 : forall C Cr D Dr f (g:C->D), (fun b => g o ((e4 C Cr f) b)) == e4 D Dr (fun rb => g o (f rb)))...
       (* A -> B -> C *)
       set (e5 := fun C => flip_equiv B A C).
-      assert (v5 : forall C f a b, e5 C f a b == f b a).
-      intros; simpl; auto.
-      assert (n5 : forall C D f (g:C->D), (fun a => g o ((e5 C f) a)) == e5 D (fun a => g o (f a))).
-      intros; simpl; auto.
+      assert (v5 : forall C f a b, e5 C f a b == f b a)...
+      assert (n5 : forall C D f (g:C->D), (fun a => g o ((e5 C f) a)) == e5 D (fun a => g o (f a)))...
       (* A * B -> C *)
       set (e6 := fun C => equiv_inverse (curry_equiv A B C)).
-      assert (v6 : forall C f a b, e6 C f (a,b) == f a b).
-      intros; simpl; auto.
-      assert (n6 : forall C D f (g:C->D), g o (e6 C f) == e6 D (fun a => (g o (f a)))).
-      intros; simpl; auto.
+      assert (v6 : forall C f a b, e6 C f (a,b) == f a b)...
+      assert (n6 : forall C D f (g:C->D), g o (e6 C f) == e6 D (fun a => (g o (f a))))...
       exists (fun C Cr =>
         (equiv_compose (e1 C)
           (equiv_compose (e2 C Cr)
@@ -686,8 +694,8 @@ Section ReflectiveSubfibration.
               (equiv_compose (e4 C Cr)
                 (equiv_compose (e5 C) (e6 C))))))).
       split; intros.
-      path_via (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))) (a,b)).
-      path_via (g o (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))))).
+      path_change (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))) (a,b)).
+      path_change (g o (e6 C (e5 C (e4 C Cr (e3 C (e2 C Cr (e1 C f))))))).
     Defined.
 
     Definition reflection_equiv_twovar := pr1 refeq_twovar_all.
@@ -704,7 +712,7 @@ Section ReflectiveSubfibration.
     Proof.
       unfold reflect_factor_twovar.
       equiv_moveleft.
-      path_via (g o (reflection_equiv_twovar C Cr ((reflection_equiv_twovar C Cr ^-1) f))).
+      path_change (g o (reflection_equiv_twovar C Cr ((reflection_equiv_twovar C Cr ^-1) f))).
       apply inverse_is_section.
     Defined.
 
@@ -729,7 +737,7 @@ Section ReflectiveSubfibration.
       equiv_moveright.
       apply funext; intros [a b].
       path_via (to_reflect A a, to_reflect B b).
-      path_via ((fun ab : A * B =>
+      path_change ((fun ab : A * B =>
       (to_reflect A (fst ab), to_reflect B (snd ab))) (a,b)).
       apply reflect_factor_factors with (x := (a,b)).
       (* other direction *)
@@ -815,9 +823,8 @@ Section ReflectiveSubfibration.
       reflect_factor_weakdep (to_reflect X x) == f x.
     Proof.
       unfold reflect_factor_weakdep.
-      path_via (transport (map pr1 (rfdep_factors x))
+      fpath_via (transport (map pr1 (rfdep_factors x))
         (pr2 (rfdep (to_reflect X x)))).
-      apply happly, map, rfdep_section_factors.
       apply fiber_path with (p := rfdep_factors x).
     Defined.
 

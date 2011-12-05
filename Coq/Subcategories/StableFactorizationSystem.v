@@ -234,9 +234,10 @@ Ltac unreflect_compute_in s :=
         set (h := f0);
         let mid := context cxt[h x0] in
           path_via' mid;
-          [ repeat apply_happly;
+          [ repeat progress first [
             apply @reflect_factor_dep_factors with
               (X := X0) (P := P0) (Pr := Pr0) (f := f0) (x := x0)
+            | apply_happly ]
             | unfold h; clear h ]
   end.
 
@@ -298,7 +299,7 @@ Section FactorizationSystem2.
     Let rf1_compute (x:X) (p:P x) :
       rf1 (x ; to_reflect _ p) == to_reflect _ (x ; p).
     Proof.
-      unfold rf1; unreflect_compute.
+      unfold rf1. unreflect_compute.
     Defined.
 
     Let rf2 : (reflect (sigT P)) -> {x:X & reflect (P x)}.
@@ -480,9 +481,8 @@ Section FactorizationSystem2.
       (Y := reflect X)
       (Yr := reflect_in_rsc X).
     assert (p : @id (reflect X) == reflect_factor (reflect_in_rsc X) (to_reflect X)).
-    path_via (reflect_factor (reflect_in_rsc X) ((@id (reflect X) o to_reflect X))).
-    apply opposite.  apply funext.  intros x. apply reflect_factor_unfactors.
-    apply funext; intros x; auto.
+    apath_via (reflect_factor (reflect_in_rsc X) ((@id (reflect X) o to_reflect X))) x.
+    apply opposite, reflect_factor_unfactors.
     apply (transport p).
     apply (pr2 (idequiv _)).
   Defined.
@@ -813,24 +813,18 @@ Section FactorizationSystem2.
       { hf : {x:X & f x == pr1 z} & to_reflect _ hf == pr2 z }.
     Proof.
       destruct z as [y rxp].
-      path_via ({x:X & {p : f x == y &
+      apath_via ({x:X & {p : f x == y &
         (transport (P := fun y' => reflect {x':X & f x' == y'}) p
           (to_reflect _ (existT (fun x' => f x' == f x) x (idpath (f x))))
-          == rxp)}}).
-      apply funext. intros x.
+          == rxp)}}) x.
       apply equiv_to_path, total_paths_equiv.
-      path_via ({x:X & {p : f x == y &
-        (to_reflect _ (existT (fun x' => f x' == y) x p)) == rxp}}).
-      apply funext. intros x.
-      apply map.
-      apply funext. intros p.
+      apath_via ({x:X & {p : f x == y &
+        (to_reflect _ (existT (fun x' => f x' == y) x p)) == rxp}}) x.
       apply @map with (f := fun t => t == rxp).
-      apply opposite.
       path_via (to_reflect {x' : X & f x' == y}
-        (x ; (transport (P := fun y => f x == y) p (idpath (f x))))).
+        (x ; (transport (P := fun y => f x == y) x0 (idpath (f x))))).
+      2:path_via (idpath (f x) @ x0); apply @trans_is_concat.
       apply opposite.
-      path_via (idpath (f x) @ p).
-      apply @trans_is_concat.
       apply @trans_map with    
         (P := fun (y:Y) => f x == y)
         (Q := fun (y:Y) => reflect {x0:X & f x0 == y})
