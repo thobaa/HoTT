@@ -381,13 +381,25 @@ Hint Resolve
    to fail unification.  This tactic does the work that I think they
    should be doing. *)
 
+Ltac apply_happly_to f' g' x' :=
+  first [
+      apply @happly with (f := f') (g := g') (x := x')
+    | apply @happly_dep with (f := f') (g := g') (x := x')
+  ].
+
 Ltac apply_happly :=
   match goal with
-    | |- ?f' ?x' == ?g' ?x' =>
-      first [
-          apply @happly with (f := f') (g := g') (x := x')
-        | apply @happly_dep with (f := f') (g := g') (x := x')
-      ]
+    | |- ?f ?x == ?g ?x =>
+      apply_happly_to f g x
+    | |- ?f1 (?f2 ?x) == ?g ?x =>
+      change ((f1 o f2) x == g x);
+      apply_happly_to (f1 o f2) g x
+    | |- ?f ?x == ?g1 (?g2 ?x) =>
+      change (f x == (g1 o g2) x);
+      apply_happly_to f (g1 o g2) x
+    | |- ?f1 (?f2 ?x) == ?g1 (?g2) ?x =>
+      change ((f1 o f2) x == (g1 o g2) x);
+      apply_happly_to (f1 o f2) (g1 o g2) x
   end.
 
 (** The following tactic is intended to be applied when we want to
@@ -432,6 +444,15 @@ Ltac path_using mid lem :=
 
 Ltac path_via' mid :=
   apply @concat with (y := mid).
+
+(** And this variant does not actually do composition; it just changes
+   the form of one of the goals. *)
+
+Ltac path_change mid :=
+  match goal with
+    |- ?source == ?target =>
+      first [ change (source == mid) | change (mid == target) ]
+  end; path_simplify.
 
 (** Here are some tactics for reassociating concatenations.  The
    tactic [associate_right] associates both source and target of the

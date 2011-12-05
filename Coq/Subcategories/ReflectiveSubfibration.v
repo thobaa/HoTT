@@ -23,6 +23,101 @@ Class rsf (in_rsc : Type -> Type) := {
     is_equiv (fun f: reflect X -> Y => f o to_reflect X)
   }.
 
+(** Since we work with a lot of paths between functions, we define a
+   variant of [path_simplify] which also applies [happly] and
+   [happly_dep]. *)
+
+Ltac fpath_simplify := repeat progress first [
+    apply whisker_left
+  | apply whisker_right
+  | apply @map
+  | apply_happly
+]; auto with path_hints.
+
+(** And corresponding versions of [path_via] and [path_change].  It
+   would be nice if we could define a new version of [path_using] and
+   then teach all the other tactics from "Paths.v" to use the new one
+   instead, but I don't know how to do that. *)
+
+Ltac fpath_via mid :=
+  apply @concat with (y := mid); fpath_simplify.
+
+Ltac fpath_change mid :=
+  match goal with
+    |- ?source == ?target =>
+      first [ change (source == mid) | change (mid == target) ]
+  end; fpath_simplify.
+
+(** The above tactics are used when we want to change the goal into a
+   path between functions.  Here are versions that do the reverse,
+   using funext. *)
+
+Ltac apath_simplify name := repeat progress first [
+    apply whisker_left
+  | apply whisker_right
+  | apply @map
+  | apply funext; let x := fresh name in intros x
+  | apply funext_dep; let x := fresh name in intros x
+]; auto with path_hints.
+
+Ltac apath_via mid name :=
+  apply @concat with (y := mid); apath_simplify name.
+
+Ltac apath_change mid name :=
+  match goal with
+    |- ?source == ?target =>
+      first [ change (source == mid) | change (mid == target) ]
+  end; apath_simplify name.
+
+
+(** Package up the factorization equivalence as an 'equiv' object. *)
+Definition reflection_equiv {in_rsc : Type -> Type} {is_rsf : rsf (in_rsc)}
+  : forall X Y, in_rsc Y -> (reflect X -> Y) <~> (X -> Y).
+Proof.
+  intros X Y P.
+  apply existT with (fun f: reflect X -> Y => f o to_reflect X).
+  apply reflect_is_reflection.
+  assumption.
+Defined.
+
+(** Tactics which implement and unimplement the above operation. *)
+
+Ltac find_refleqv_with Yr :=
+  match goal with
+    | in_rsc : Type -> Type,
+      is_rsf : rsf ?in_rsc
+      |- appcontext cxt [ ?f (@to_reflect ?in_rsc ?is_rsf ?X ?x) ] =>
+      match (type of f) with
+        | (reflect X) -> ?Y =>
+          let new := context cxt [ @reflection_equiv in_rsc is_rsf X Y Yr f x ] in
+            change new; fpath_simplify
+      end
+    | in_rsc : Type -> Type,
+      is_rsf : rsf ?in_rsc
+      |- appcontext cxt [ ?f o (@to_reflect ?in_rsc ?is_rsf ?X) ] =>
+      match (type of f) with
+        | (reflect X) -> ?Y =>
+          let new := context cxt [ @reflection_equiv in_rsc is_rsf X Y Yr f ] in
+            change new; fpath_simplify
+      end
+    | in_rsc : Type -> Type,
+      is_rsf : rsf ?in_rsc
+      |- appcontext cxt [ (?g o ?f) o (@to_reflect ?in_rsc ?is_rsf ?X) ] =>
+      match (type of f) with
+        | (reflect X) -> ?Y =>
+          let new := context cxt [ g o @reflection_equiv in_rsc is_rsf X Y Yr f ] in
+            change new; fpath_simplify
+      end
+  end.
+
+Ltac find_refleqv :=
+  match goal with
+    in_rsc : Type -> Type,
+    is_rsf : rsf ?in_rsc
+    |- appcontext cxt [ @reflection_equiv ?in_rsc ?is_rsf ?X ?Y ?Yr ] =>
+      find_refleqv_with Yr
+  end; try cancel_inverses.
+
 (** We now prove a number of properties of such a reflective
    subfibration.  In this file, we state all of them as if we were
    talking merely about a reflective subcategory.  By interpretation
@@ -38,18 +133,8 @@ Section ReflectiveSubfibration.
 
   Hint Resolve reflect_in_rsc.
 
-  (** Package up the factorization equivalence as an 'equiv' object. *)
-  Definition reflection_equiv : forall X Y, in_rsc Y ->
-    (reflect X -> Y) <~> (X -> Y).
-  Proof.
-    intros X Y P.
-    apply existT with (fun f: reflect X -> Y => f o to_reflect X).
-    apply reflect_is_reflection.
-    assumption.
-  Defined.
-
-  (** A name for its inverse, which does factorization of maps through
-     the unit of the reflection. *)
+  (** A name for the inverse of [reflection_equiv], which does
+     factorization of maps through the unit of the reflection. *)
   Definition reflect_factor {X Y} (Yr : in_rsc Y) : (X -> Y) -> (reflect X -> Y) :=
     reflection_equiv X Y Yr ^-1.
 
