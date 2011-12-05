@@ -221,13 +221,6 @@ Proof.
   path_induction.
 Defined.
 
-(** Taking opposites of 1-paths is functorial on 2-paths. *)
-
-Definition opposite2 {A} {x y : A} {p q : x == y} (a : p == q) : (!p == !q).
-Proof.
-  path_induction.
-Defined.
-
 (** Now we consider the application of functions to paths. *)
 
 (** A path [p : x == y] in a space [A] is mapped by [f : A -> B] to a
@@ -237,6 +230,14 @@ Lemma map {A B} {x y : A} (f : A -> B) : (x == y) -> (f x == f y).
 Proof.
   path_induction.
 Defined.
+
+(** Taking opposites of 1-paths is functorial on 2-paths. *)
+
+Definition opposite2 {A} {x y : A} {p q : x == y} (a : p == q) : (!p == !q)
+  := map opposite a.
+(*Proof.
+  path_induction.
+Defined.*)
 
 (** The next two lemmas state that [map f p] is "functorial" in the path [p]. *)
 
