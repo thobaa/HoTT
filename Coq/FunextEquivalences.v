@@ -24,6 +24,26 @@ Proof.
   intro f; apply funext; intro b; apply funext; intro a; auto.
 Defined.
 
+(** Pre- and post-composing by an equivalence is an equivalence. *)
+
+Lemma precomp_equiv A B C (g : A <~> B) : (B -> C) <~> (A -> C).
+Proof.
+  exists (fun h => h o g).
+  apply @hequiv_is_equiv with (g := fun k => k o (g ^-1));
+    intros k; apply funext; intros a; unfold compose; simpl; apply map.
+  apply inverse_is_retraction.
+  apply inverse_is_section.
+Defined.
+
+Lemma postcomp_equiv A B C (g : B <~> C) : (A -> B) <~> (A -> C).
+Proof.
+  exists (fun h => g o h).
+  apply @hequiv_is_equiv with (g := fun k => (g ^-1) o k);
+    intros k; apply funext; intros a; unfold compose; simpl.
+  apply inverse_is_section.
+  apply inverse_is_retraction.
+Defined.
+
 (** Cartesian products have the correct universal property. *)
 
 Lemma prod_equiv A B T :
