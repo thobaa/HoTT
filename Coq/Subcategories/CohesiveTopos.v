@@ -31,6 +31,14 @@ Definition pi_factor {A B} (Bd : is_discrete B) : (A ^-> B) -> (pi A ^-> B) :=
 Definition pi_functor {A B} (f : A ^-> B) : (pi A ^-> pi B) :=
   pi_factor (pi_is_discrete B) (to_pi B ^o f).
 
+Definition pi_flat_adjunction {A B} : 
+  (pi A ^-> B) <~> (A ^-> ♭ B).
+Proof.
+  apply @equiv_compose with (B := pi A ^-> ♭ B).
+  apply equiv_inverse, flat_coreflection_equiv; auto.
+  apply pi_reflection_equiv; auto.
+Defined.
+
 Axiom pi_preserves_unit : eis_equiv (to_pi eunit).
 
 Definition pi_prod_cmp A B : pi (A #* B) ^-> pi A #* pi B.
