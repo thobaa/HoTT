@@ -223,7 +223,7 @@ Ltac unreflect A :=
   intros A;
   pattern A;
   apply reflect_factor_dep;
-  [ auto | clear A; intro A].
+  [ auto 10 | clear A; intro A].
 
 (* A helper tactic for the next one. *)
 
@@ -374,8 +374,8 @@ Section FactorizationSystem2.
   Proof.
     exists f.
     intros y.
-    apply @transport with (P := in_rsc) (x := unit).
-    apply opposite, equiv_to_path, contr_equiv_unit.
+    apply in_rsc_equiv_in_rsc with unit.
+    apply equiv_inverse, contr_equiv_unit.
     apply (pr2 f).
     auto.
   Defined.
@@ -456,18 +456,18 @@ Section FactorizationSystem2.
       set (hfcontr := pr2 QftoYeq).
       unfold in_E.
       intros y.
-      assert (fibeq : reflect {x : X & f x == y} == hfiber (pr1 QftoYeq) y).
+      apply contr_equiv_contr with (A := hfiber (pr1 QftoYeq) y).
       unfold hfiber.
-      path_via ({x : Qf & pr1 x == y}).
-      apply equiv_to_path.
+      apply @equiv_compose with (B := {x : Qf & pr1 x == y}).
+      apply path_to_equiv. path_simplify.
+      apply funext. intros q.
+      apply @map with (f := (fun r => r == y)).
+      apply QftoYispr1.
       unfold Qf, QftoYeq.
+      apply equiv_inverse.
       apply hfiber_fibration with
         (P := fun y' => reflect { x:X & f x == y' })
         (x := y).
-      apply funext. intros q.
-      apply @map with (f := (fun r => r == y)).
-      apply opposite, QftoYispr1.
-      apply (transport (!fibeq)).
       apply hfcontr.
       (* Oh noes!  Universe inconsistency! *)
     Defined.
@@ -806,31 +806,48 @@ Section FactorizationSystem2.
     (* The M part *)
     Let m : Z -> Y := pr1.
 
-    (* We identify the fiber of e as something more manageable.
-       Probably univalence is not necessary for this proof, but it
-       makes it easier.  *)
-    Let efiber_ident (z : Z) : {x : X & e x == z} ==
+    (* We identify the fiber of e as something more manageable. *)
+    Let efiber_ident (z : Z) : {x : X & e x == z} <~>
       { hf : {x:X & f x == pr1 z} & to_reflect _ hf == pr2 z }.
     Proof.
       destruct z as [y rxp].
-      apath_via ({x:X & {p : f x == y &
+      apply @equiv_compose with
+        (B := {x:X & {p : f x == y &
         (transport (P := fun y' => reflect {x':X & f x' == y'}) p
           (to_reflect _ (existT (fun x' => f x' == f x) x (idpath (f x))))
-          == rxp)}}) x.
-      apply equiv_to_path, total_paths_equiv.
-      apath_via ({x:X & {p : f x == y &
-        (to_reflect _ (existT (fun x' => f x' == y) x p)) == rxp}}) x.
-      apply @map with (f := fun t => t == rxp).
+          == rxp)}}).
+      set (g1 := fun x => total_paths_equiv _ _ (e x) (y ; rxp)).
+      apply total_equiv with (g := g1).
+      intros x; exact (pr2 (g1 x)).
+      apply @equiv_compose with
+        (B := {x:X & {p : f x == y &
+        (to_reflect _ (existT (fun x' => f x' == y) x p)) == rxp}}).
+      assert (g2 : forall x,
+        {p : f x == y & transport
+          (P := fun y' : Y => @reflect in_rsc is_rsf {x' : X & f x' == y'})
+          p (to_reflect {x' : X & f x' == f x} (x ; idpath (f x))) == rxp}
+        <~> {p : f x == y &
+          to_reflect {x' : X & f x' == y} (x ; p) == rxp}).
+      2:apply total_equiv with (g := g2).
+      2:exact (fun x => pr2 (g2 x)).
+      intros x.
+      assert (g3 : forall p, 
+        (transport
+          (P := fun y' : Y => @reflect in_rsc is_rsf {x' : X & f x' == y'})
+          p (to_reflect {x' : X & f x' == f x} (x ; idpath (f x))) == rxp)
+        <~> (to_reflect {x' : X & f x' == y} (x ; p) == rxp)).
+      2:apply total_equiv with (g := g3).
+      2:exact (fun p => pr2 (g3 p)).
+      intros p.
+      apply concat_equiv_left.
       path_via (to_reflect {x' : X & f x' == y}
-        (x ; (transport (P := fun y => f x == y) x0 (idpath (f x))))).
-      2:path_via (idpath (f x) @ x0); apply @trans_is_concat.
-      apply opposite.
+        (x ; (transport (P := fun y => f x == y) p (idpath (f x))))).
+      path_via (idpath (f x) @ p); apply opposite, @trans_is_concat.
       apply @trans_map with    
         (P := fun (y:Y) => f x == y)
         (Q := fun (y:Y) => reflect {x0:X & f x0 == y})
         (f := fun (y:Y) (r:f x == y) =>
           to_reflect {x0:X & f x0 == y} (x ; r)).
-      apply equiv_to_path.
       apply total_assoc_sum with
         (P := fun x => f x == y)
         (Q := fun xp => to_reflect {x' : X & f x' == y} xp == rxp).
@@ -843,16 +860,17 @@ Section FactorizationSystem2.
       exists Z.
       assert (einE : in_E e).
       unfold in_E. intros z.
-      apply (transport (P := fun T => is_contr (reflect T)) (!efiber_ident z)).
+      refine (contr_equiv_contr _ _
+        (reflect_functor_equiv (equiv_inverse (efiber_ident z))) _).
       destruct z as [y rxp]. simpl.
       apply to_reflect_in_E.
       exists (e ; einE).
       assert (minM: in_M m).
       unfold in_M, m.
       intros y.
-      set (q := equiv_to_path
-        (hfiber_fibration _ (fun y => reflect {x:X & f x == y}) y)).
-      apply (transport (P := in_rsc) q). auto.
+      refine (in_rsc_equiv_in_rsc _ _ 
+        (hfiber_fibration _ (fun y => reflect {x:X & f x == y}) y) _).
+      auto.
       exists (m ; minM).
       apply funext. intros x. unfold m, e; simpl. auto.
     Defined.

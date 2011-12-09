@@ -133,15 +133,16 @@ Section LexReflective.
         (to_reflect X) (to_reflect Y)
         (fun x => !reflect_naturality f x) y).
       intros [rx p].
-      apply @transport with (P := fun T => is_contr (reflect T))
-        (x := {z : {x:X & to_reflect X x == rx} &
+      apply contr_equiv_contr with
+        (A := reflect {z : {x:X & to_reflect X x == rx} &
           square_fiber_map (to_reflect X) (to_reflect Y)
            f (reflect_functor f)
            (fun x => !!reflect_naturality f x) rx z
            == (existT
              (fun y' => to_reflect Y y' == reflect_functor f rx)
              y (!p))}).
-      apply opposite, equiv_to_path.
+      apply reflect_functor_equiv.
+      apply equiv_inverse.
       apply @transport with (y := p) (x := !(!p))
         (P := fun q => {x : {x : X & f x == y} &
           square_fiber_map f (reflect_functor f) (to_reflect X)

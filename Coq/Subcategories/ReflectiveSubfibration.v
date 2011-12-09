@@ -183,6 +183,17 @@ Section ReflectiveSubfibration.
 
   Hint Resolve reflect_in_rsc.
 
+  (* First we prove that the subcategory is replete, using univalence.
+     This is the only place univalence is used in the basic theory, so
+     we could assert repleteness as a separate axiom to avoid the use
+     of univalence.  *)
+  Definition in_rsc_equiv_in_rsc X Y : (X <~> Y) -> in_rsc X -> in_rsc Y.
+  Proof.
+    intros f Xr.
+    apply @transport with (x := X).
+    apply equiv_to_path; assumption. assumption.
+  Defined.
+
   (** A name for the inverse of [reflection_equiv], which does
      factorization of maps through the unit of the reflection. *)
   Definition reflect_factor {X Y} (Yr : in_rsc Y) : (X -> Y) -> (reflect X -> Y) :=
@@ -398,9 +409,9 @@ Section ReflectiveSubfibration.
   (** If the unit at X is an equivalence, then X is in the subcategory. *)
   Definition reflect_equiv_in_rsc X : is_equiv (to_reflect X) -> in_rsc X.
     intros H.
-    apply @transport with (P := in_rsc) (x := reflect X).
-    exact (!equiv_to_path (to_reflect X ; H)).
-    apply reflect_in_rsc.
+    apply in_rsc_equiv_in_rsc with (reflect X).
+    apply equiv_inverse; exists (to_reflect X); auto.
+    auto.
   Defined.
 
   (** In fact, it suffices for the unit at X merely to have a retraction. *)
