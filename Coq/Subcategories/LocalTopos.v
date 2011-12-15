@@ -10,10 +10,22 @@ Require Import Homotopy Subtopos Codiscrete.
    Since a coreflective subcategory cannot be axiomatized directly, we
    use the "external" approach and axiomatize it using operations on
    [#Type].
-*)
+
+   As with codiscretes, we use a module type for discretes, which
+   extends that for codiscretes.  An importer of this file wanting to
+   work axiomatically with a local topos structure can simply say
+
+     Declare Module Disc: Discrete.
+     Import Disc.
+   
+   *)
+
+Module Type Discrete.
+
+Declare Module Codisc : Codiscrete.
+Export Codisc.
 
 (** First we assume a codiscrete subobject of [#Type]. *)
-
 Axiom is_discrete : # Type -> Type.
 Axiom is_discrete_is_prop : forall A, is_prop (is_discrete A).
 Axiom is_discrete_is_codiscrete : forall A, is_codiscrete (is_discrete A).
@@ -84,3 +96,5 @@ Axiom sharp_flat_is_equiv : forall (A : #Type),
    we were instead to take this as a *definition* of "discrete", then
    [flat_sharp_is_equiv] and [sharp_flat_is_equiv] should be provable.
    *)
+
+End Discrete.

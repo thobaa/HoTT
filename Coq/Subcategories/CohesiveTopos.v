@@ -7,8 +7,18 @@ Require Import Homotopy Subtopos Codiscrete LocalTopos.
    that the reflector should preserve finite products.
 
    As with everything to do with discrete objects, we need to work
-   externally.
+   externally, and we use a module type.  To work axiomatically in a
+   cohesive topos, say
+
+     Declare Module Coh : Cohesive.
+     Import Coh.
+
    *)
+
+Module Type Cohesive.
+
+Declare Module Disc : Discrete.
+Export Disc.
 
 Axiom pi : # Type -> # Type.
 
@@ -55,3 +65,5 @@ Defined.
 
 Axiom pi_preserves_products : forall A B,
   eis_equiv (pi_prod_cmp A B).
+
+End Cohesive.

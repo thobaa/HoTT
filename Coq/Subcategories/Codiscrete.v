@@ -6,12 +6,29 @@ Require Import Homotopy Subtopos.
    We show how to "externalize" everything internal to the type theory
    and reason about the category "from the outside".
 
-   It would be better to do this with typeclasses as well, but the
-   notation is getting fairly unwieldy, and we are rarely interested
-   in more than one structure of local topos.  Thus we use axioms.
+   Rather than using typeclasses as we did for general reflective
+   subfibrations and so on, in this file we use a module type for the
+   lex-reflective subcategory.  This has the advantage over
+   typeclasses that we can define notations, tactics, and hints in a
+   module functor.  We could just assert the lex-reflective
+   subcategory with axioms, since we are rarely interested in more
+   than one structure of codiscreteness, but parametrizing it somehow
+   is more convenient because sometimes we may want to *define* what
+   it means to be codiscrete rather than assuming it as an undefined
+   term (for instance, when working in a scone, the codiscretes are
+   the closed subtopos determined by a given subterminal object).
+
+   Anyone importing this file who wants to work with codiscretes given
+   axiomatically has simply to say
+
+     Declare Module Codisc : Codiscrete.
+     Import Codisc.
+
    *)
 
-Axiom is_codiscrete : Type -> Type.
+Module Type Codiscrete.
+
+Parameter is_codiscrete : Type -> Type.
 
 Axiom codiscrete_is_rsf : rsf is_codiscrete.
 Existing Instance codiscrete_is_rsf.
@@ -663,3 +680,5 @@ Proof.
   apply ecompose_compute.
   apply esharp_factor_compute.
 Defined.
+
+End Codiscrete.
