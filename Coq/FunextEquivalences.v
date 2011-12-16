@@ -1,4 +1,4 @@
-Require Import Paths Equivalences UsefulEquivalences Funext UnivalenceAxiom.
+Require Import Paths Equivalences UsefulEquivalences Funext UnivalenceAxiom HLevel.
 
 (** This file defines some useful equivalences that require functional
    extensionality, usually involving equivalences between function
@@ -52,6 +52,49 @@ Proof.
     intros k; apply funext_dep; intros a; unfold compose; simpl.
   apply inverse_is_section.
   apply inverse_is_retraction.
+Defined.
+
+(** The space of factorizations through an equivalence is contractible. *)
+
+Lemma equiv_postfactor_contr A B C (g : B <~> C) (h : A -> C) :
+  is_contr { f : A -> B &  g o f === h }.
+Proof.
+  apply contr_equiv_contr with ({f : A -> B & g o f == h}).
+  apply total_equiv with (fun f => happly).
+  intros f; apply strong_funext.
+  change (is_contr (hfiber (postcomp_equiv _ _ _ g) h)).
+  refine (pr2 (postcomp_equiv _ _ _ g) h).
+Defined.
+
+Lemma equiv_prefactor_contr A B C (f : A <~> B) (h : A -> C) :
+  is_contr { g : B -> C &  g o f === h }.
+Proof.
+  apply contr_equiv_contr with ({g : B -> C & g o f == h}).
+  apply total_equiv with (fun g => happly).
+  intros g; apply strong_funext.
+  change (is_contr (hfiber (precomp_equiv _ _ _ f) h)).
+  refine (pr2 (precomp_equiv _ _ _ f) h).
+Defined.
+
+(** It follows that [is_hiso] is a prop, and hence equivalent to [is_equiv].  *)
+
+Theorem is_hiso_is_prop A B (f : A -> B) : is_prop (is_hiso f).
+Proof.
+  apply allpath_prop.
+  intros [g1 h1] [g2 h2].
+  set (feq := (f ; hiso_to_equiv f (g1,h1)) : A <~> B).
+  apply prod_path; apply contr_path.
+  refine (equiv_prefactor_contr _ _ _ feq (idmap A)).
+  refine (equiv_postfactor_contr _ _ _ feq (idmap B)).
+Defined.
+
+Theorem is_equiv_is_hiso_equiv A B (f : A -> B) : is_equiv f <~> is_hiso f.
+Proof.
+  apply prop_iff_equiv.
+  apply is_equiv_is_prop.
+  apply is_hiso_is_prop.
+  intros fiseq; exact (equiv_to_hiso (f; fiseq)).
+  apply hiso_to_equiv.
 Defined.
 
 (** Cartesian products have the correct universal property. *)
