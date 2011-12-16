@@ -62,7 +62,6 @@ Proof.
   apply contr_equiv_contr with ({f : A -> B & g o f == h}).
   apply total_equiv with (fun f => happly).
   intros f; apply strong_funext.
-  change (is_contr (hfiber (postcomp_equiv _ _ _ g) h)).
   refine (pr2 (postcomp_equiv _ _ _ g) h).
 Defined.
 
@@ -72,7 +71,6 @@ Proof.
   apply contr_equiv_contr with ({g : B -> C & g o f == h}).
   apply total_equiv with (fun g => happly).
   intros g; apply strong_funext.
-  change (is_contr (hfiber (precomp_equiv _ _ _ f) h)).
   refine (pr2 (precomp_equiv _ _ _ f) h).
 Defined.
 
@@ -138,4 +136,216 @@ Proof.
   intros f.
   apply funext_dep; intros a.
   destruct (f a); auto.
+Defined.
+
+(** The space of sections of fibrations is "associative". *)
+
+Section SectionAssoc.
+
+  Hypotheses (A:Type) (P : A -> Type) (Q : forall x, P x -> Type).
+
+  Let sa1 : (forall (x:A) (p:P x), Q x p)
+    -> forall xp:sigT P, Q (pr1 xp) (pr2 xp).
+  Proof.
+    intros f [x p]; exact (f x p).
+  Defined.
+
+  Let sa2 : (forall xp:sigT P, Q (pr1 xp) (pr2 xp))
+    -> forall (x:A) (p:P x), Q x p.
+  Proof.
+    intros f x p; exact (f (x;p)).
+  Defined.
+    
+  Definition section_assoc :
+    (forall (x:A) (p:P x), Q x p) <~> (forall xp:sigT P, Q (pr1 xp) (pr2 xp)).
+  Proof.
+    exists sa1.
+    apply hequiv_is_equiv with sa2.
+    intros f; apply funext_dep; intros [x p]; auto.
+    intros f; apply funext_dep; intros p; apply funext_dep; intros x; auto.
+  Defined.
+
+End SectionAssoc.
+
+Section SectionAssocSum.
+
+  Hypotheses (A:Type) (P : A -> Type) (Q : sigT P -> Type).
+
+  Let sa1 : (forall (x:A) (p:P x), Q (x;p))
+    -> forall xp:sigT P, Q xp.
+  Proof.
+    intros f [x p]; exact (f x p).
+  Defined.
+
+  Let sa2 : (forall xp:sigT P, Q xp)
+    -> forall (x:A) (p:P x), Q (x;p).
+  Proof.
+    intros f x p; exact (f (x;p)).
+  Defined.
+    
+  Definition section_assoc_sum :
+    (forall (x:A) (p:P x), Q (x;p)) <~> (forall xp:sigT P, Q xp).
+  Proof.
+    exists sa1.
+    apply hequiv_is_equiv with sa2.
+    intros f; apply funext_dep; intros [x p]; auto.
+    intros f; apply funext_dep; intros p; apply funext_dep; intros x; auto.
+  Defined.
+
+End SectionAssocSum.
+
+(* And "commutative". *)
+
+Definition section_comm (A:Type) (B:Type) (P : A -> B -> Type) :
+  (forall a b, P a b) <~> (forall b a, P a b).
+Proof.
+  exists (fun f b a => f a b).
+  apply hequiv_is_equiv with (fun f a b => f b a).
+  intros f; apply funext_dep; intros y; apply funext_dep; intros x; auto.
+  intros f; apply funext_dep; intros x; apply funext_dep; intros y; auto.
+Defined.
+
+(* The space of sections of a type dependent on paths with one end
+   free is equivalent, by the eliminator, to the fiber over the
+   identity path. *)
+
+Program Definition section_paths_equiv A (x:A)
+  (P : forall (b:A), x==b -> Type) :
+  (forall (y:A) (p: x == y), P y p) <~> P x (idpath x)
+  := (_ ; hequiv_is_equiv _ _ _ _).
+Next Obligation.
+  intros A x P Z.
+  exact (Z x (idpath x)).
+Defined.
+Next Obligation.
+  intros A x P z y p.
+  induction p. exact z.
+Defined.
+Next Obligation.
+  intros A x P z;
+    unfold section_paths_equiv_obligation_1, section_paths_equiv_obligation_2.
+  auto.
+Defined.
+Next Obligation.
+  unfold section_paths_equiv_obligation_1, section_paths_equiv_obligation_2.
+  intros A x P Z; apply funext_dep; intros y; apply funext_dep; intros p.
+  induction p. auto.
+Defined.
+
+(* Finally, we can prove that [is_adjoint_equiv] is equivalent to [is_equiv]. *)
+
+Theorem is_adjoint_equiv_equiv A B (f : A -> B) :
+  is_equiv f <~> is_adjoint_equiv f.
+Proof.
+  unfold is_equiv, is_contr.
+  apply @equiv_compose with
+    (B := {g: forall y:B, hfiber f y & forall y y0, y0 == g y}).
+  apply section_total_equiv.
+  unfold hfiber.
+  set (X := {g : B -> A & forall y:B, f (g y) == y}).
+  set (Y := forall y : B, {x : A & f x == y}).
+  set (k := equiv_inverse
+    (section_total_equiv B (fun _ => A) (fun y x => f x == y)) : X <~> Y).
+  apply @equiv_compose with
+    (B := {gs : X & forall y y0, y0 == k gs y}).
+  apply equiv_inverse.
+  exists (total_map k (fun gs => idmap
+    (forall (y : B) (y0 : {x : A & f x == y}), y0 == k gs y))).
+  apply pullback_total_is_equiv with (f := k)
+    (Q := fun g => forall (y : B) (y0 : {x : A & f x == y}), y0 == g y).
+  unfold X.
+  apply @equiv_compose with
+    (B := {g : B -> A & { s : forall y, f (g y) == y &
+      forall (y : B) (y0 : {x : A & f x == y}), y0 == k (g;s) y}}).
+  apply equiv_inverse.
+  apply total_assoc_sum with
+    (Q := fun gs => forall (y : B) (y0 : {x : A & f x == y}), y0 == k gs y).
+  unfold is_adjoint_equiv.
+  cut (forall g,
+    {s : forall y : B, f (g y) == y &
+      forall (y : B) (y0 : {x : A & f x == y}), y0 == k (g ; s) y}
+    <~>
+    {is_section : forall y : B, f (g y) == y &
+      {is_retraction : forall x : A, g (f x) == x &
+        forall x : A, map f (is_retraction x) == is_section (f x)}}).
+  intros H. apply total_equiv with (g := H). intros g; apply (pr2 (H g)).
+  intros g.
+  cut (forall s,
+    (forall (y : B) (y0 : {x : A & f x == y}), y0 == k (g ; s) y)
+    <~>
+    {is_retraction : forall x : A, g (f x) == x &
+      forall x : A, map f (is_retraction x) == s (f x)}).
+  intros H. apply total_equiv with H.  intros s; apply (pr2 (H s)).
+  intros s.
+  apply @equiv_compose with
+    (B := forall (y : B) (x : A) (p : f x == y), (x;p) == k (g;s) y).
+  apply postcomp_equiv_dep. intros y.
+  apply equiv_inverse.
+  apply section_assoc_sum with (Q := fun y0 => y0 == k (g;s) y).
+  apply @equiv_compose with
+    (B := forall (y : B) (x : A) (p : f x == y),
+      { q : x == pr1 (k (g;s) y) &
+        transport q p == pr2 (k (g;s) y)}).
+  apply postcomp_equiv_dep; intros y.
+  apply postcomp_equiv_dep; intros x.
+  apply postcomp_equiv_dep; intros p.
+  apply total_paths_equiv.
+  unfold k; simpl. clear X Y k.
+  apply @equiv_compose with
+    (B := forall (x : A) (y : B) (p : f x == y),
+      {q : x == g y & transport (P := fun x0 : A => f x0 == y) q p == s y}).
+  apply section_comm.
+  apply @equiv_compose with
+    (B := forall x:A, { r : g (f x) == x & map f r == s (f x)}).
+  2:apply section_total_equiv.
+  apply postcomp_equiv_dep; intros x.
+  apply @equiv_compose with
+    (B := forall (y : B) (p : f x == y),
+      {q : x == g y & !map f q @ p == s y}).
+  apply postcomp_equiv_dep; intros y.
+  apply postcomp_equiv_dep; intros p.
+  apply equiv_inverse.
+  apply @equiv_compose with
+    (B := {q : x == g y &
+      transport (P := fun y0 => y0 == y) (map f q) p == s y}).
+  apply total_equiv with
+    (g := fun q:x == g y => concat (trans_is_concat_opp (map f q) p)).
+  intros q; apply concat_is_equiv_left.
+  apply total_equiv with
+    (g := fun q:x == g y => concat (map_trans (fun y0 => y0 == y) f q p)).
+  intros q; apply concat_is_equiv_left.
+  apply @equiv_compose with
+    (B := {r : x == g (f x) & !map f r @ idpath (f x) == s (f x)}).
+  Focus 2.
+  apply @equiv_compose with
+    (B := {r : x == g (f x) & map f (!r) == s (f x)}).
+  apply @equiv_compose with
+    (B := {r : x == g (f x) & !map f r == s (f x)}).
+  apply total_equiv with (fun r:x == g (f x) =>
+    concat (!idpath_right_unit _ _ _ (!map f r))).
+  intros r; apply concat_is_equiv_left.
+  apply total_equiv with (fun r:x == g (f x) =>
+    concat (opposite_map _ _ f _ _ r)).
+  intros r; apply concat_is_equiv_left.
+  exists (total_map
+    (P := fun r => map f (!r) == s (f x))
+    (Q := fun r => map f r == s (f x))
+    (opposite_equiv x (g (f x)))
+    (fun r => idmap (map f (!r) == s (f x)))).
+  refine (pullback_total_is_equiv
+    (fun r => map f r == s (f x)) (opposite_equiv x (g (f x)))).
+  refine (section_paths_equiv B (f x)
+    (fun y p => {q : x == g y & !map f q @ p == s y})).
+Defined.
+
+(** And therefore it is a prop. *)
+
+Theorem is_adjoint_equiv_is_prop A B (f : A -> B) :
+  is_prop (is_adjoint_equiv f).
+Proof.
+  apply allpath_prop; intros e1 e2.
+  apply equiv_injective with
+    (V := is_equiv f)
+    (w := equiv_inverse (is_adjoint_equiv_equiv A B f)).
+  apply is_equiv_is_prop.
 Defined.

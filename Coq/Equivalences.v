@@ -55,11 +55,11 @@ Proof.
   intro A.
   exists (idmap A).
   intros x.
-  contract_hfiber x (idpath x).
-  apply total_path with (p := q).
-  simpl.
-  compute in q.
-  path_induction.
+  exists (existT (fun x' => x' == x) x (idpath x)).
+  intros [x' p].
+  unfold idmap in p.
+  induction p.
+  auto.
 Defined.
 
 (** From an equivalence from [U] to [V] we can extract a map in the
@@ -290,9 +290,9 @@ Proof.
   apply opposite, homotopy_naturality_toid with (f := f o g).
 Defined.
 
-(** Probably equiv_to_adjoint and adjoint_to_equiv are actually
-   inverse equivalences, at least if we assume function
-   extensionality. *)
+(** In fact, [equiv_to_adjoint] and [adjoint_to_equiv] are actually
+   inverse equivalences, but proving this requires function
+   extensionality.  See [FunextEquivalences.v]. *)
 
 Lemma equiv_pointwise_idmap A (f : A -> A) (p : forall x, f x == x) : is_equiv f.
 Proof.
@@ -457,4 +457,6 @@ Proof.
   assumption.
 Defined.
 
-(** Of course, the harder part is showing that is_hiso is a proposition. *)
+(** Of course, the harder part is showing that [is_hiso] is a
+   proposition, and therefore equivalent to [is_equiv].  This also
+   requires function extensionality; see [FunextEquivalences.v]. *)
