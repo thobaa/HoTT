@@ -347,10 +347,11 @@ Defined.
 
 (** Paths in cartesian products. *)
 
-Definition prod_path {X Y} (x x' : X) (y y' : Y) :
-  (x == x') -> (y == y') -> ((x,y) == (x',y')).
+Definition prod_path {X Y} (z z' : X * Y) :
+  (fst z == fst z') -> (snd z == snd z') -> (z == z').
 Proof.
-  path_induction.
+  intros; destruct z; destruct z'.
+  simpl in *; path_induction.
 Defined.
 
 (** We declare some more [Hint Resolve] hints, now in the "hint
@@ -430,6 +431,17 @@ Ltac path_simplify' lem :=
     | apply opposite; apply lem
     ]; auto with path_hints.
 
+(* This one takes a tactic rather than a lemma. *)
+
+Ltac path_simplify'' tac :=
+  repeat progress first [
+      apply whisker_left
+    | apply whisker_right
+    | apply @map
+    | tac
+    | apply opposite; tac
+    ]; auto with path_hints.
+
 (** These tactics are used to construct a path [a == b] as a
    composition of paths [a == x] and [x == b].  They then apply
    [path_simplify] to both paths, along with possibly an additional
@@ -440,6 +452,9 @@ Ltac path_via mid :=
 
 Ltac path_using mid lem :=
   apply @concat with (y := mid); path_simplify' lem.
+
+Ltac path_using' mid tac :=
+  apply @concat with (y := mid); path_simplify'' tac.
 
 (** This variant does not call path_simplify. *)
 
@@ -751,7 +766,8 @@ Ltac undo_compose_map :=
 Ltac do_concat_map_in s :=
   match s with
     | context cxt [ map ?f (?p @ ?q) ] =>
-      let mid := context cxt [ map f p @ map f q ] in path_using mid concat_map
+      let mid := context cxt [ map f p @ map f q ] in
+        path_using mid (concat_map _ _ _ _ _ f p q)
   end.
 
 Ltac do_concat_map :=
@@ -764,7 +780,8 @@ Ltac do_concat_map :=
 Ltac undo_concat_map_in s :=
   match s with
     | context cxt [ map ?f ?p @ map ?f ?q ] =>
-      let mid := context cxt [ map f (p @ q) ] in path_using mid concat_map
+      let mid := context cxt [ map f (p @ q) ] in
+        path_using mid (concat_map _ _ _ _ _ f p q)
   end.
 
 Ltac undo_concat_map :=

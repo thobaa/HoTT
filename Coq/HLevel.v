@@ -70,7 +70,8 @@ Proof.
   apply H.
 Defined.
 
-(** H-level is preserved under equivalence. *)
+(** H-level is preserved under equivalence.
+   (This is, of course, trivial with univalence.) *)
 
 Theorem hlevel_equiv {n A B} : (A <~> B) -> is_hlevel n A -> is_hlevel n B.
 Proof.
@@ -89,6 +90,43 @@ Proof.
   apply IHn with (A := (f^-1 x) == (f^-1 y)).
   apply equiv_map_equiv.
   apply H.
+Defined.
+
+(** And by products *)
+
+Definition prod_hlevel n A B :
+  is_hlevel n A -> is_hlevel n B -> is_hlevel n (A * B).
+Proof.
+  intros n; induction n.
+  intros A B [a ac] [b bc].
+  exists (a,b).
+  intros [a' b'].
+  apply prod_path. apply ac. apply bc.
+  intros A B Ah Bh [a1 b1] [a2 b2].
+  apply @hlevel_equiv with (A := ((a1 == a2) * (b1 == b2))%type).
+  apply equiv_inverse, prod_path_equiv.
+  apply IHn. apply Ah. apply Bh.
+Defined.
+
+(** And by dependent sums *)
+
+Definition total_hlevel n A (P : A -> Type) :
+  is_hlevel n A -> (forall a, is_hlevel n (P a)) ->
+  is_hlevel n (sigT P).
+Proof.
+  intros n; induction n.
+  intros A P [a ac] Pc.
+  exists (a; pr1 (Pc a)).
+  intros [a' p'].
+  apply total_path with (ac a').
+  apply contr_path; apply (Pc a).
+  intros A P Ah Ph [a1 p1] [a2 p2].
+  apply @hlevel_equiv with
+    (A := {p : a1 == a2 & transport p p1 == p2}).
+  apply equiv_inverse, total_paths_equiv.
+  apply IHn.
+  apply Ah.
+  intros p; apply (Ph a2).
 Defined.
 
 (** Propositions are of h-level 1. *)
@@ -340,11 +378,9 @@ Proof.
   intros A d.
   apply axiomK_implies_isset.
   intros x p.
-  set (q := d x x).
   set (qp := map_dep (d x) p).
-  fold q in qp.
-  generalize qp.
-  clear qp.
+  set (q := d x x) in *.
+  clearbody qp; revert qp.
   destruct q as [q | q'].
   intro qp0.
   apply concat_cancel_left with (p := q).
@@ -352,6 +388,7 @@ Proof.
   apply opposite, trans_is_concat.
   path_via q.
   set (qp1 := trans_map p (fun (x0:A) => inl  (x == x0 -> Empty_set)) q).
+  simpl in qp1.
   apply inl_injective with (B := (x == x -> Empty_set)).
   exact (qp1 @ qp0).
   induction (q' p).

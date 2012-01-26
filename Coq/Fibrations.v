@@ -313,6 +313,16 @@ Proof.
   path_induction.
 Defined.
 
+(** Transporting in an iterated fibration. *)
+
+Definition trans_trans {A} {P : A -> Type}
+  {Q : forall a, P a -> Type}
+  {a1 a2 : A} (s : a1 == a2) {p1 : P a1} :
+  Q a1 p1 -> Q a2 (transport s p1).
+Proof.
+  path_induction.
+Defined.
+
 (** Transporting in a fibration of paths. *)
 
 Lemma trans_paths A B (f g : A -> B) (x y : A) (p : x == y) (q : f x == g x) :

@@ -11,6 +11,24 @@ Proof.
   exact (pr2 (contr_equiv_unit A Acontr)).
 Defined.
 
+(* A type is equivalent to its product with [unit]. *)
+
+Definition prod_unit_right_equiv A : A <~> A * unit.
+Proof.
+  exists (fun a => (a,tt)).
+  apply hequiv_is_equiv with (g := fun att:A*unit => let (a,t):=att in a).
+  intros [a t]; destruct t; auto.
+  auto.
+Defined.
+
+Definition prod_unit_left_equiv A : A <~> unit * A.
+Proof.
+  exists (fun a => (tt,a)).
+  apply hequiv_is_equiv with (g := fun att:unit*A => let (t,a):=att in a).
+  intros [t a]; destruct t; auto.
+  auto.
+Defined.
+
 (** The action of an equivalence on paths is an equivalence. *)
 
 Theorem equiv_map_inv {A B} {x y : A} (f : A <~> B) :
@@ -193,6 +211,29 @@ Proof.
   simpl.
   apply total_path_reconstruction.
 Defined.
+
+(** And similarly for products. *)
+
+Program Definition prod_path_equiv A B (x y : A * B) :
+  (x == y) <~> ((fst x == fst y) * (snd x == snd y))
+  := (fun p => (map (@fst A B) p, map (@snd A B) p) ;
+    hequiv_is_equiv _ _ _ _).
+Next Obligation.
+  intros A B [a1 b1] [a2 b2] [p q].
+  apply prod_path; assumption.
+Defined.
+Next Obligation.
+  intros A B [a1 b1] [a2 b2] [p q].
+  unfold prod_path_equiv_obligation_1.
+  simpl in p, q.
+  apply prod_path; induction p; induction q; auto.
+Defined.
+Next Obligation.
+  intros A B x1 x2 pq.
+  induction pq as [[a b]].
+  unfold prod_path_equiv_obligation_1; auto.
+Defined.
+
 
 (** The homotopy fiber of a fibration is equivalent to the actual fiber. *)
 
@@ -393,9 +434,9 @@ Proof.
   apply @hequiv_is_equiv with
     (g := fun bd => (f ^-1 (fst bd), g ^-1 (snd bd))).
   intros [b d]; simpl.
-  apply prod_path; cancel_inverses.
+  apply prod_path; simpl; cancel_inverses.
   intros [a c] ;simpl.
-  apply prod_path; cancel_inverses.
+  apply prod_path; simpl; cancel_inverses.
 Defined.
 
 (** Products are equivalent to pullbacks over any contractible type. *)

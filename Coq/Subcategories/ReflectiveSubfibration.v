@@ -565,7 +565,7 @@ Section ReflectiveSubfibration.
       apply reflect_retract_in_rsc with (r := prod_map_back).
       intros xy. destruct xy.
       unfold prod_map_back.
-      apply prod_path.
+      apply prod_path; simpl.
       equiv_moveright.
       path_via (to_reflect X (fst (x,y))).
       apply reflect_naturality.
