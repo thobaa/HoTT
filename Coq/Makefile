@@ -28,7 +28,8 @@ VFILES:= Functions.v \
 	 UnivalenceAxiom.v \
 	 FunextEquivalences.v \
 	 HLevel.v \
-         Homotopy.v
+         Homotopy.v \
+	 Nat.v Integers.v
 
 VOFILES:=$(VFILES:.v=.vo)
 GLOBFILES:=$(VFILES:.v=.glob)
