@@ -428,6 +428,18 @@ Proof.
   apply inverse_is_retraction.
 Defined.
 
+(** A fibration with contractible fibers is an equivalence. *)
+
+Definition fibcontr_equiv A (P : A -> Type) :
+  (forall a, is_contr (P a)) -> is_equiv (@projT1 A P).
+Proof.
+  intros A P Pc.
+  refine (hequiv_is_equiv _ (fun a => (a;pr1 (Pc a))) _ _).
+  intros a; auto.
+  intros [a p]; simpl.
+  apply map; exact (!pr2 (Pc a) p).
+Defined.
+
 (** André Joyal suggested the following definition of equivalences,
    and to call it "h-isomorphism". *)
 
