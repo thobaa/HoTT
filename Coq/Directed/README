@@ -1,0 +1,23 @@
+The files in this directory develop the internal homotopy type theory
+of an "(oo,1)-topos of simplicial objects", regarded as a sort of
+"directed homotopy type theory" in which we can talk about
+(oo,1)-categories in a Rezkian incarnation.
+
+We do not (yet) define a notion of "simplicial type".  Rather, here we
+just take it as given that we have an interpretation of homotopy type
+theory in some (oo,1)-topos of simplicial objects, or more generally
+in any (oo,1)-topos containing a (directed) strict interval object.
+(Recall that simplicial sets are the classifying topos of strict
+intervals, and similarly simplicial oo-groupoids are the classifyng
+(oo,1)-topos of strict intervals.)
+
+- Fin.v: Basic definitions and operations on finite types.
+
+- SimplexCategory.v: Definition of Delta and simplicial operators.
+
+- Directed Interval.v: Axiomatization of a strict interval object,
+  definition of the standard simplices, and the induced action of the
+  simplicial operators.
+
+- Segal.v: Definition of Segal types and Rezk types, which are
+  internal versions of Segal spaces and complete Segal spaces.
