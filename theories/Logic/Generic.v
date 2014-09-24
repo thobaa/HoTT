@@ -24,20 +24,20 @@ Global Notation IsGenericProp P := (@inO (_:Logic) P).
 
 (** A logic comes with connectives and quantifiers.  There is a distinction between those connectives and quantifiers which automatically preserve modal types, which are just given by the restriction of the ordinary type formers, and those which do not, to which the modal reflection has to be applied.  Those which automatically preserve modal types are:
 
-- true (Unit or True)
-- conjunction (prod, *, or /\)
-- implies (->)
-- universal quantification (forall)
+- true ([Unit])
+- conjunction ([prod], [*], or [/\])
+- implies ([->])
+- universal quantification ([forall])
 
 Those which have to be modally reflected are
 
-- false (Empty)
-- disjunction (sum or +)
-- existential quantification (sigT or {x:A & B x})
+- false ([Empty])
+- disjunction ([sum] or [+])
+- existential quantification ([sigT] or [{x:A & B x}])
 
 For the former, the fact that they preserve generic-propositions (modal types) has already been proven and placed in the instance database by [ReflectiveSubuniverse.v].  We don't need to modify their names or notations, but for completeness, we may define one abbreviation that is similar to the new ones we will define below. *)
 
-Notation htrue := Unit (only parsing).
+Global Notation htrue := Unit (only parsing).
 
 (** For the latter, we define the reflected versions with "logical" names and notations, and also their elimination principles. *)
 
@@ -53,7 +53,6 @@ Section HFalse.
       | inl _ => Empty
       | inr _ => O Empty
     end.
-  Notation False := hfalse (only parsing).
 
   Global Instance inO_hfalse : IsGenericProp (hfalse).
   Proof.
@@ -144,7 +143,7 @@ Defined.
 
 Coercion truncated_logic : trunc_index >-> Logic.
 
-Notation oo := PAT_logic.
+Global Notation oo := PAT_logic.
 
 Definition notnot_logic `{Funext} : Logic
   := Build_Logic notnot_modality (inl _).
