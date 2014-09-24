@@ -55,3 +55,6 @@ Notation Σ := Susp.
 
 Notation "x ∨ y" := (x \/ y) (at level 85, right associativity) : type_scope.
 Notation "¬ x" := (~ x) (at level 75, right associativity) : type_scope.
+
+Notation "∃  x .. y , P" := (hexists x, .. (hexists y, P) ..)
+  (at level 200, x binder, y binder, right associativity) : type_scope.
