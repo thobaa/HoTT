@@ -1,7 +1,8 @@
 (* -*- mode: coq; mode: visual-line -*- *)
 Require Import Basics.
 Require Import types.Empty types.Sum.
-Require Import ReflectiveSubuniverse Modality hit.Truncations.
+Require Import ReflectiveSubuniverse Modality HProp.
+Require Import hit.Truncations hit.PropositionalFracture.
 Open Scope equiv_scope.
 
 (** * Generic Logic parametrized by a modality *)
@@ -130,9 +131,11 @@ End HExists.
 
 (** ** Some useful logics *)
 
+(** The propositions-as-types (PAT) logic *)
 Definition PAT_logic :=
   Build_Logic identity_modality (inl _).
 
+(** The [n]-truncated logic for any [n]. *)
 Definition truncated_logic (n : trunc_index) : Logic.
 Proof.
   refine (Build_Logic (truncation_modality n) _).
@@ -143,8 +146,25 @@ Defined.
 
 Coercion truncated_logic : trunc_index >-> Logic.
 
+(** The PAT logic may also be called [oo]-truncated logic. *)
 Global Notation oo := PAT_logic.
 
+(** The hprops in any logic are again a logic. *)
+Definition hprop_sublogic : Logic -> Logic.
+Proof.
+  intros log; refine (Build_Logic (hprop_submodality log) _).
+  destruct (@logic_contains_empty log).
+  - apply inl; split.
+    + apply i.
+    + simpl; exact _.
+  - apply inr; assumption.
+Defined.
+
+(** The Friedman translation (http://en.wikipedia.org/wiki/Friedman_translation) is a closed modality. *)
+Definition friedman_PAT_logic (A : hProp) := Build_Logic (closed_modality A) (inr tt).
+Definition friedman_hprop_logic (A : hProp) := hprop_sublogic (friedman_PAT_logic A).
+
+(** Double-negation logic *)
 Definition notnot_logic `{Funext} : Logic
   := Build_Logic notnot_modality (inl _).
 
