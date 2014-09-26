@@ -2,8 +2,7 @@ Require Import Basics.
 Require Import types.Universe types.Unit types.Forall types.Arrow types.Sigma types.Paths.
 Require Import HProp Misc TruncType HSet UnivalenceImpliesFunext.
 Require Import hit.Pushout hit.Truncations hit.Connectedness.
-Require Import HoTT.Logic.
-Import Logic.Notations.Exists.
+Require Import Logic.HPropLogic.
 
 Open Local Scope path_scope.
 Open Local Scope equiv_scope.

@@ -41,8 +41,7 @@ Require Export hit.V.
 Require Export hit.Join.
 Require Export hit.PropositionalFracture.
 
-Require Export Logic.Generic.
-Require Logic.Notations.
+Require Export Logic.HPropLogic.     (* A choice here *)
 Require Export Logic.LEM.
 
 Require Export HoTT.Tactics.

@@ -6,8 +6,7 @@ Require Import Basics.
 Require Import types.Unit types.Bool types.Universe types.Sigma types.Arrow types.Forall.
 Require Import HProp HSet EquivalenceVarieties UnivalenceImpliesFunext.
 Require Import hit.Truncations hit.quotient.
-Require Import HoTT.Logic.
-Import Logic.Notations.Exists.
+Require Import Logic.HPropLogic.
 
 Local Open Scope path_scope.
 Local Open Scope equiv_scope.

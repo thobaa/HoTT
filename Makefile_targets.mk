@@ -74,7 +74,7 @@ CORE_VFILES = \
 	$(srcdir)/theories/hit/PropositionalFracture.v \
 	$(srcdir)/theories/hit/V.v \
 	$(srcdir)/theories/Logic/Generic.v \
-	$(srcdir)/theories/Logic/Notations.v \
+	$(srcdir)/theories/Logic/HPropLogic.v \
 	$(srcdir)/theories/Logic/LEM.v \
 	$(srcdir)/theories/Logic.v \
 	$(srcdir)/theories/Misc.v \

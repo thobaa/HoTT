@@ -81,6 +81,8 @@ Section HFalse.
 
 End HFalse.
 
+Global Notation "~ P" := (hnot P) (at level 75, right associativity) : type_scope.
+
 (** ** Disjunction
 
 We could play a similar game for [hor] as we did for [hfalse], but it would be less useful since fewer logics are closed under sums. *)
@@ -110,6 +112,8 @@ Section HOr.
 
 End HOr.
 
+Global Notation "P \/ Q" := (hor P Q) (at level 85, right associativity) : type_scope.
+
 (** ** Existential quantification
 
 Here there would be no point at all in playing the game, since a nonidentity modality cannot be closed under all existential quantification. *)
@@ -130,6 +134,12 @@ Section HExists.
     := fun f => O_rectnd (sig_rect (fun _ => Q) f).
 
 End HExists.
+
+(** The following notation allows us to write [hexists (x:A), P x] rather than [hex (fun (x:A) => P x)]. *)
+Global Notation "'hexists' x .. y , p"
+  := (hex (fun x => .. (hex (fun y => p)) ..))
+  (at level 200, x binder, y binder, right associativity)
+  : type_scope.
 
 (** ** Some useful logics *)
 

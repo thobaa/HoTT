@@ -3,7 +3,7 @@ Require Import Basics.
 Require Import types.Universe types.Bool types.Sigma types.Arrow types.Sum.
 Require Import ReflectiveSubuniverse Modality HProp UnivalenceImpliesFunext.
 Require Import hit.Truncations.
-Require Import Logic.Generic Logic.Notations.
+Require Import Logic.Generic.
 Require Import HoTT.Tactics.
 
 Local Open Scope trunc_scope.
