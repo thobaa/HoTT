@@ -65,7 +65,7 @@ Section Unit_Subuniverse.
   Global Coercion TypeO_pr1 (T : TypeO) := @pr1 Type inO T.
   Global Instance inO_TypeO (T : TypeO) : inO T := pr2 T.
 
-  (** This function picks up the second component by typeclass resolution. *)
+  (** Uses of this function will pick up the second component by typeclass resolution. *)
   Definition asTypeO (T : Type) {T_inO : inO T} : TypeO
     := (T ; T_inO).
 

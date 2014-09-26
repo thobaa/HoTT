@@ -36,7 +36,9 @@ Those which have to be modally reflected are
 - disjunction ([sum] or [+])
 - existential quantification ([sigT] or [{x:A & B x}])
 
-For the former, the fact that they preserve generic-propositions (modal types) has already been proven and placed in the instance database by [ReflectiveSubuniverse.v].  We don't need to modify their names or notations, but for completeness, we may define one abbreviation that is similar to the new ones we will define below. *)
+Note that "Harrop formulas" are those built from connectives in the first group plus negation (there may also be a deeper connection).
+
+For those connectives in the first group, the fact that they preserve generic-propositions (modal types) has already been proven and placed in the instance database by [ReflectiveSubuniverse.v].  We don't need to modify their names or notations, but for completeness, we may define one abbreviation that is similar to the new ones we will define below. *)
 
 Global Notation htrue := Unit (only parsing).
 
