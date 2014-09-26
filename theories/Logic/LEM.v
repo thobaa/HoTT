@@ -144,7 +144,7 @@ Proof.
 Defined.
 
 (** Thus, nearly always, when we say "LEM" we mean the version in (-1)-logic.  *)
-Notation LEM := (LEM_(-1)).
+Global Notation LEM := (LEM_(-1)).
 
 (** In this case, since [P] and [~P] are disjoint, we have a simpler phrasing of LEM. *)
 Definition lem' `{LEM} `{Funext} P `{IsHProp P} : P + ~P.

@@ -2,6 +2,7 @@
 Require Import Basics.
 Require Import types.Empty types.Sum.
 Require Import hit.Truncations.
+Require Logic.Generic Logic.LEM.
 Open Scope equiv_scope.
 
 (** * HProp Logic
@@ -61,3 +62,32 @@ Definition hexists_elim (A : Type) (P : A -> Type)
            (Q : Type) `{IsHProp Q}
 : (forall a, P a -> Q) -> (hexists x, P x) -> Q
     := fun f => Trunc_rect_nondep (sig_rect (fun _ => Q) f).
+
+(** ** LEM *)
+
+(** We redefine and export the basic facts about LEM. *)
+
+Section LEM.
+
+  Let hprop_logic := (Logic.Generic.truncated_logic -1).
+
+  Definition notnot_LEM (P : Type) : ~ ~ (P \/ (~ P))
+    := LEM.notnot_LEM hprop_logic P.
+
+  Class LEM := lem_internal : LEM.LEM_ hprop_logic.
+  Typeclasses Transparent LEM.
+
+  Definition lem `{LEM} : forall P, (P \/ (~ P))
+    := lem_internal.
+
+  Definition double_negation {l : LEM} P {hp : IsHProp P} : (~ ~ P) -> P
+    := @LEM.double_negation hprop_logic l P hp.
+
+  Definition lem_from_double_negation
+  : (forall P, IsHProp P -> (~ ~ P) -> P) -> LEM
+  := @LEM.lem_from_double_negation hprop_logic.
+
+  Definition lem' `{LEM} `{Funext} P `{IsHProp P} : P + ~P
+    := @LEM.lem' lem _ P _.
+
+End LEM.
