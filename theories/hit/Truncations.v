@@ -116,6 +116,11 @@ Notation oo := identity_modality.
 
 Notation merely := (Trunc -1).
 
+(** ** Since any modality preserves hprops, the hprops in any modality are again a modality. *)
+
+Definition hprop_submodality : Modality -> Modality
+  := fun mod => easy_composite_modality mod (-1)%trunc (@ishprop_O_hprop mod).
+
 (** ** Tactic to remove truncations in hypotheses if possible. *)
 Ltac strip_truncations :=
   (** search for truncated hypotheses *)

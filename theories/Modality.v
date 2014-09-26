@@ -272,4 +272,42 @@ Global Instance inO_identity (T : Type)
 : @inO identity_modality T
   := tt.
 
+(** We can also combine existing modalities.  The simplest combination is if a modality [O1] preserves the [O2]-modal types, then the composite [O1 o O2] is a modality. *)
+
+Definition easy_composite_modality (mod1 mod2 : Modality)
+           (pres : forall A, @inO mod2 A -> @inO mod2 (@O mod1 A))
+: Modality.
+Proof.
+  pose (inO1 := @inO mod1); pose (inO2 := @inO mod2);
+    pose (O1 := @O mod1); pose (O2 := @O mod2).
+  refine (Build_Modality
+            (Build_UnitSubuniverse
+               (fun A => inO1 A * inO2 A)
+               (fun A => O1 (O2 A))
+               _
+               (fun A => O_unit (O2 A) o O_unit A)
+               _)
+            _ _ _ _).
+  - intros A; split.
+    + apply O_inO.
+    + apply pres, O_inO.
+  - intros ? A.
+    refine trunc_prod; apply hprop_inO.
+  - intros A B A_inO f ?; split.
+    + refine (@inO_equiv_inO mod1 _ A B (fst A_inO) f _).
+    + refine (@inO_equiv_inO mod2 _ A B (snd A_inO) f _).
+  - intros A B B_inO f oa.
+    transparent assert (g : (forall oa : O2 A, B (O_unit (O A) oa))).
+    { exact (@O_rect mod2 A (fun oa => B (O_unit (O A) oa))
+                     (fun x => snd (B_inO (O_unit (O A) x))) f). }
+    exact (@O_rect mod1 (O A) B (fun x => fst (B_inO x)) g oa).
+  - intros A B B_inO f oa. cbn. unfold compose.
+    abstract (repeat rewrite O_rect_beta; reflexivity).
+  - intros A A_inO z z'; split.
+    + apply inO_paths. exact (fst A_inO).
+    + apply inO_paths. exact (snd A_inO).
+Defined.
+
+(** Since every modality preserves hprops by [ishprop_O_hprop], once we know that the hprops are a modality (which requires hit/Truncations.v) this will imply that the hprops in any modality are again a modality. *)
+
 (** For more examples of modalities, see hit/Truncations.v and hit/PropositionalFracture.v. *)

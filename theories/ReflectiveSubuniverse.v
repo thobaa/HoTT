@@ -645,6 +645,8 @@ Section Reflective_Subuniverse.
       apply ap, allpath_hprop.
     Defined.
 
+    (** We do not know whether a reflective subuniverse must preserve n-types for any n >= 0. *)
+
   End Types.
 
   Section Monad.
