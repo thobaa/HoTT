@@ -15,6 +15,8 @@ Record Open_Modality :=
        unOp : hProp
      }.
 
+Arguments Op {_} _.
+
 (** Exercise 7.13(i): Open modalities *)
 Module OpenModalities_easy <: EasyModalities.
 
