@@ -13,6 +13,7 @@ Require Export HProp.
 Require Export HSet.
 Require Export EquivalenceVarieties.
 Require Export Extensions.
+Require Export Liftings.
 Require Export Misc.
 Require Export Functorish.
 Require Export Factorization.
@@ -44,6 +45,7 @@ Require Export Modalities.Localization.
 Require Export Modalities.Nullification.
 Require Export Modalities.Open.
 Require Export Modalities.Closed.
+Require Export Modalities.Comodality.
 
 Require Export HoTT.Tactics.
 

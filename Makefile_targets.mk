@@ -50,6 +50,7 @@ CORE_VFILES = \
 	$(srcdir)/theories/HProp.v \
 	$(srcdir)/theories/EquivalenceVarieties.v \
 	$(srcdir)/theories/Extensions.v \
+	$(srcdir)/theories/Liftings.v \
 	$(srcdir)/theories/HSet.v \
 	$(srcdir)/theories/UnivalenceImpliesFunext.v \
 	$(srcdir)/theories/Tactics.v \
@@ -71,6 +72,7 @@ CORE_VFILES = \
 	$(srcdir)/theories/Modalities/Nullification.v \
 	$(srcdir)/theories/Modalities/Open.v \
 	$(srcdir)/theories/Modalities/Closed.v \
+	$(srcdir)/theories/Modalities/Comodality.v \
 	$(srcdir)/theories/hit/Circle.v \
 	$(srcdir)/theories/hit/Truncations.v \
 	$(srcdir)/theories/hit/Connectedness.v \
