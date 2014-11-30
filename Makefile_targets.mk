@@ -62,6 +62,7 @@ CORE_VFILES = \
 	$(srcdir)/theories/ObjectClassifier.v \
 	$(srcdir)/theories/NullHomotopy.v \
 	$(srcdir)/theories/Idempotents.v \
+	$(srcdir)/theories/Pullback.v \
 	$(srcdir)/theories/Factorization.v \
 	$(srcdir)/theories/Modalities/ReflectiveSubuniverse.v \
 	$(srcdir)/theories/Modalities/Modality.v \

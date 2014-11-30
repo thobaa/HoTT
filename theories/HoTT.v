@@ -20,6 +20,7 @@ Require Export ObjectClassifier.
 Require Export TruncType.
 Require Export NullHomotopy.
 Require Export Idempotents.
+Require Export Pullback.
 
 Require Export hit.Interval.
 Require Export hit.Truncations.
