@@ -48,6 +48,7 @@ Require Export Modalities.Localization.
 Require Export Modalities.Nullification.
 Require Export Modalities.Open.
 Require Export Modalities.Closed.
+Require Export Modalities.Fracture.
 
 Require Export HoTT.Tactics.
 
