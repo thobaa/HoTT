@@ -1,6 +1,5 @@
 (* -*- mode: coq; mode: visual-line -*- *)
-Require Import HoTT.Basics HoTT.Types.
-Require Import HoTT.Tactics.
+Require Import HoTT.Basics.
 
 Local Open Scope path_scope.
 Local Open Scope equiv_scope.
@@ -57,46 +56,56 @@ End Baz.
 
 (Given this, you might think that an alternative way to define [allfoo] would begin [Module allfoo : Foo.].  Coq does accept such a statement, but unfortunately there doesn't seem to be a way to complete it.) *)
 
-(** We begin by defining some module types that wrap ordinary types, functions, and statements about them, turning them from internal statements about inhabitants of the universe to external statements about closed types. *)
+(** We begin by defining some module types that wrap ordinary types, functions, and statements about them, turning them from internal statements about inhabitants of the universe to external statements about closed types.  In general, we adopt the convention that a suffix of [M] means a module or module type wrapper, which has a field [m] that indicates the actual object under consideration.  Of course, no such module should be [Import]ed; the [m] fields should always be used dot-qualified.  *)
 
 (** An instantiation of [TypeM] is a closed type, i.e. a type in the empty context. *)
 Module Type TypeM.
-  (** Unfortunately, due to the way polymorphic module types work, a parameter [ty : Type] can only be instantiated by a closed type that lives in _every_ universe.  In particular, we wouldn't be able to instantiate it by [Type].  We work around this by declaring [ty] to have type [Type2]; this enables us to instantiate it by [Type] once, as long as we don't demand that that [Type] also contain some smaller universe.  It seems unlikely that we would need that, but if we ever do, we could always come back here and change [Type2] to [Type3]. *)
-  Parameter ty : Type2.
+  (** Unfortunately, due to the way polymorphic module types work, a parameter [m : Type] can only be instantiated by a closed type that lives in _every_ universe.  In particular, we wouldn't be able to instantiate it by [Type].  We sort-of work around this by declaring [m] to have type [Type2]; this enables us to instantiate it by [Type] once, as long as we don't demand that that [Type] also contain some smaller universe.  It seems unlikely that we would need that, but if we ever do, we could always come back here and change [Type2] to [Type3]. *)
+  Parameter m : Type2.
 End TypeM.
 
 (** For example, we have the unit type. *)
 Module UnitM <: TypeM.
   (** We have to give the [: Type2] annotation for it to be sufficiently polymorphic (at least in Coq trunk). *)
-  Definition ty : Type2@{j i} := Unit@{j}.
+  Definition m : Type2@{j i} := Unit@{j}.
 End UnitM.
 
 (** And the empty type. *)
 Module EmptyM <: TypeM.
-  Definition ty : Type2@{j i} := Empty@{j}.
+  Definition m : Type2@{j i} := Empty@{j}.
 End EmptyM.
 
 (** And, as promised, the smallest (non-[Set]) universe. *)
 Module Type1M <: TypeM.
   (** Confusingly, although the universe annotation on [Unit] and [Empty] specifies the universe *in* which they live, the universe annotation on [Type1] specifies the universe that it *is*, which must be smaller than the one in which it lives. *)
-  Definition ty : Type2@{j i} := Type1@{i}.
+  Definition m : Type2@{j i} := Type1@{i}.
 End Type1M.
 
 (** Similarly, an instantiation of [FunctionM XM YM] is a function [XM.ty -> YM.ty] in the empty context. *)
 Module Type FunctionM (XM YM : TypeM).
-  Parameter fn : XM.ty -> YM.ty.
+  Parameter m : XM.m -> YM.m.
 End FunctionM.
 
 (** And likewise for homotopies in the empty context. *)
 Module Type HomotopyM (XM YM : TypeM) (fM gM : FunctionM XM YM).
-  Parameter htpy : fM.fn == gM.fn.
+  Parameter m : fM.m == gM.m.
 End HomotopyM.
+
+(** And equivalences *)
+Module Type EquivM (XM YM : TypeM).
+  Parameter m : XM.m <~> YM.m.
+End EquivM.
+
+(** And sections *)
+Module Type SectM (XM YM : TypeM) (sM : FunctionM XM YM) (rM : FunctionM YM XM).
+  Parameter m : Sect sM.m rM.m.
+End SectM.
 
 (** Composition of closed functions. *)
 Module ComposeM (XM YM ZM : TypeM)
        (gM : FunctionM YM ZM) (fM : FunctionM XM YM)
        <: FunctionM XM ZM.
-  Definition fn := gM.fn o fM.fn.
+  Definition m := gM.m o fM.m.
 End ComposeM.
 
 (** And postcomposition of a closed homotopy by a closed function.  At one point I thought we would need this, but we don't actually seem to. *)
@@ -105,111 +114,155 @@ Module ApM (XM YM ZM : TypeM)
        (pM : HomotopyM XM YM fM gM).
   Module hfM := ComposeM XM YM ZM hM fM.
   Module hgM := ComposeM XM YM ZM hM gM.
-  Module htpyM <: HomotopyM XM ZM hfM hgM.
-    Definition htpy x := ap hM.fn (pM.htpy x).
-  End htpyM.
+  Module hpM <: HomotopyM XM ZM hfM hgM.
+    Definition m x := ap hM.m (pM.m x).
+  End hpM.
 End ApM.
 
-(** The next definition is a bit confusing: [Subuniverse] is the dependent module-type [fun (_:TypeM) => hProp].  Thus, an instantiation of [Subuniverse XM] is just a single (closed) [hProp].  However, generally what will want is instead to instantiate the corresponding dependent module-function type [forall (X:TypeM), Subuniverse M], i.e. the module version of [TypeM -> hProp].  As discussed above, this is hypothesized with [F : Subuniverse]; thus it is an operation taking each closed type [X] to a closed [hProp] (namely [(F X).inF]), representing the predicate that [X] lies in the subuniverse.
+(** The next definition is a bit confusing: [Subuniverse] is the dependent module-type [fun (_:TypeM) => hProp].  Thus, an instantiation of [Subuniverse XM] is just a single (closed) [hProp].  However, generally what will want is instead to instantiate the corresponding dependent module-function type [forall (X:TypeM), Subuniverse M], i.e. the module version of [TypeM -> hProp].  As discussed above, this is hypothesized with [F : Subuniverse]; thus it is an operation taking each closed type [X : TypeM] to a closed [hProp] representing the predicate that [X] lies in the subuniverse.  This closed [hProp] is morally [(F X).m], although in practice we have to access it by declaring [Module FXM := F X.] and then calling [FXM.m].
 
-Ideally, we would like this to be an *external* predicate on closed types rather than an operation assigning an internal predicate to each of them, but there doesn't seem to be any way to do that.  Fortunately, for comodalities we can always internalize the "in the subuniverse" predicate, by defining [inF] to be [IsEquiv fromF]. *)
+Ideally, we would like this to be an *external* predicate on closed types rather than an operation assigning an internal predicate to each of them, but there doesn't seem to be any way to do that.  Fortunately, for comodalities we can always internalize the "in the subuniverse" predicate to be [IsEquiv fromF]. *)
 Module Type Subuniverse (XM : TypeM).
-  (** I *think* this is ensuring that [inF], like [TypeM.ty], can be an hprop living in the second universe. *)
-  Parameter inF : (TruncType@{i} -1 : Type2@{j i}).
+  (** I *think* this is ensuring that [m], like [TypeM.m], can be an hprop living in the second universe. *)
+  Parameter m : (TruncType@{i} -1 : Type2@{j i}).
 End Subuniverse.
 
-(** We can, however, assert that a closed type is "closedly" in the subuniverse. *)
-Module Type InFM (F : Subuniverse) (XM : TypeM).
-  Module FXM := F XM.
-  Parameter in_ty : FXM.inF.
-End InFM.
+(** However if we are given a closed type, we can assert that it is "closedly" in the subuniverse.*)
+Module Type InM (InF : Subuniverse) (XM : TypeM).
+  Module InF_XM := InF XM.
+  Parameter m : InF_XM.m.
+End InM.
+(** The rule that all modules must be defined at top level means we need names for more things than one might expect.  Specifically, for modules [InF : Subuniverse] and [XM : TypeM], we have the following:
 
-(** Next we have to express the universal property; we need a way to say that postcomposition with a map is an equivalence.  We will use a "liftable" style dual to the notion of [ExtendableAlong] used for reflective subuniverses.  However, all the liftings have to act only on closed types and functions, because in models the universal property is not internalizable.  Unfortunately, this means that we cannot describe an "[oo]" sort of liftability, since we can't define a module type by [nat]-recursion.  Thus, we will restrict ourselves to 2-liftability, which is usually enough; if we ever need 3-liftability then we can either simply add it here or assume [Funext].
+1. The module [InF XM], which a module wrapper whose field [m] is an hprop that is an *assertion* that [X] lies in the subuniverse [F].  When we need a name for this module (which we do whenever we want to extract its field), we will call it [InF_XM].
 
-Note that the hypothesis that [XM.ty] lies in [F] is again internal rather than external.  This is again obtainable from an internal definition of [inF] as [IsEquiv fromF].
+2. The module type [InM InF XM], which is a module *type* wrapper whose implementations are closed witnesses that [X] lies in [F].  We don't usually need a special name for this module type.
+
+3. A proven or assumed implementation of [InM InF XM], which is a module wrapper around a closed witness that [X] lies in [F].  When we need a name for such a module, we will call it [isinF_XM]. *)
+
+(** We also have to assert repleteness. *)
+(* TODO: No longer needed?
+Module Type RepleteM (InF : Subuniverse) (XM YM : TypeM) (EM : EquivM YM XM).
+  Module InF_XM := InF XM.
+  Module InF_YM := InF YM.
+  (** This again is more internal than we would expect, but it can be obtained using [IsEquiv fromF]. *)
+  Parameter m : InF_YM.m -> InF_XM.m.
+End RepleteM.
+*)
+
+(** Next we have to express the universal property; we need a way to say that postcomposition with a map is an equivalence.  We will use a "liftable" style, dual to the notion of [ExtendableAlong] used for reflective subuniverses.  However, all the liftings have to act only on closed types and functions, because in models the universal property is not internalizable.  Unfortunately, this means that we cannot describe an "[oo]" sort of liftability, since we can't define a module type by [nat]-recursion.  Thus, we will restrict ourselves to 2-liftability, which is usually enough; if we ever need 3-liftability then we can either simply add it here or assume [Funext].
+
+Note that the hypothesis that [XM.m] lies in [F] is again internal rather than external.  This is again obtainable from an internal definition as [IsEquiv fromF].
 
 We will generally apply these modules to four arguments, namely the subuniverse, a type, its coreflection, and the counit map, and then assert them universally quantified over the remaining data, giving the universal property of the counit. *)
 Module Type CorecM (F : Subuniverse)
        (YM ZM : TypeM) (fM : FunctionM YM ZM)
-       (XM : TypeM) (FXM : InFM F XM)
+       (XM : TypeM) (isinF_XM : InM F XM)
        (gM : FunctionM XM ZM).
-  Parameter lift_fn : XM.ty -> YM.ty.
-  Parameter comp : fM.fn o lift_fn == gM.fn.
+  Parameter m : XM.m -> YM.m.
+  (** This wrapper module contains two data, of which one is the lift and the other its computation law.  Rather than force ourselves to define two separate wrappers, we denote the latter one by [m_beta]. *)
+  Parameter m_beta : fM.m o m == gM.m.
 End CorecM.
 
 Module Type CoindpathsM (F : Subuniverse)
        (YM ZM : TypeM) (fM : FunctionM YM ZM)
-       (XM : TypeM) (FXM : InFM F XM)
+       (XM : TypeM) (isinF_XM : InM F XM)
        (hM kM : FunctionM XM YM).
   (** All intermediate modules have to be given names, so in order to hypothesize a closed homotopy from [f o h] to [f o k], we have to give names to those [FunctionM]s. *)
-  Module domM := ComposeM XM YM ZM fM hM.
-  Module codM := ComposeM XM YM ZM fM kM.
-  Declare Module lift_htpyM (pM : HomotopyM XM ZM domM codM)
+  Module fhM := ComposeM XM YM ZM fM hM.
+  Module fkM := ComposeM XM YM ZM fM kM.
+  (** The module name [mM] means that this module is the "content" of the wrapper [CoindpathsM], but that it itself has to be a module because it needs to take an extra module parameter. *)
+  Declare Module mM (pM : HomotopyM XM ZM fhM fkM)
     : HomotopyM XM YM hM kM.
-  Module lift_htpy_compM (pM : HomotopyM XM ZM domM codM).
-    Module liftedM := lift_htpyM pM.
-    Parameter comp : forall x:XM.ty, ap fM.fn (liftedM.htpy x) = pM.htpy x.
-  End lift_htpy_compM.
+  (** Again, we include the computation law in the same module wrapper. *)
+  Module m_betaM (pM : HomotopyM XM ZM fhM fkM).
+    Module liftM := mM pM.
+    Parameter m : forall x:XM.m, ap fM.m (liftM.m x) = pM.m x.
+  End m_betaM.
 End CoindpathsM.
 
-(** Finally we are ready to define a comodality.  Again we usually use this partially applied; given [F : Subuniverse], an instantiation of [Comodality F] is an operation taking each closed type [XM : TypeM] to another closed type [tyM] that lies in [F] (i.e. we have an inhabitant of [(F tyM).inF]) together with a closed function [fromM] from [tyM] to [XM], such that for any other closed type, if it lies in the subuniverse then maps out of it are [ooLiftableAlong] [fromM]. *)
-Module Type Comodality (F : Subuniverse) (XM : TypeM).
+(** Finally we are ready to define a comodality.  Again we usually use this partially applied; given [F : Subuniverse], an instantiation of [Comodality F] is an operation taking each closed type [XM : TypeM] to another closed type [mM] that lies in [F] together with a closed function [fromM] from [mM] to [XM], such that for any other closed type, if it lies in the subuniverse then maps out of it are [LiftableAlong] [fromM]. *)
+Module Type Comodality (InF : Subuniverse) (XM : TypeM).
+  (** We might include [InF] as part of the data of [Comodality], but we want to be able to specify what it is in some cases.  For instance, it might be a wrapper around [In O] for some (monadic) modality [O]. *)
 
-  (** The coreflection of [X] *)
-  Declare Module tyM : TypeM.
+  (** The coreflection of [X].  Thinking of the subuniverse as its coreflector operation on types, we call this [m] as the "content" of the wrapper. *)
+  Parameter m : Type2.
+  Module mM <: TypeM.
+    Definition m := m.
+  End mM.
 
   (** The coreflection lies in the subuniverse. *)
-  Module in_tyM := F tyM.
-  Parameter F_inF : in_tyM.inF.
+  Declare Module isinF_mM : InM InF mM.
   
   (** The coreflection counit map from [FX] to [X] *)
-  Declare Module fromM : FunctionM tyM XM.
+  Parameter from : m -> XM.m.
+  Module fromM <: FunctionM mM XM.
+    Definition m := from.
+  End fromM.
 
   (** The universal property *)
-  Declare Module corecM : CorecM F tyM XM fromM.
-  Declare Module coindpathsM : CoindpathsM F tyM XM fromM.
+  Declare Module corecM : CorecM InF mM XM fromM.
+  Declare Module coindpathsM : CoindpathsM InF mM XM fromM.
+
+  (** Finally, we assert repleteness.  For technical reasons, it is easier to assert this in the following form: any type equivalent to [F X] lies in [F].  We will be able to show that if [X] lies in [F], then [from F X] is an equivalence; thus any type equivalent to a type in [F] will also be equivalent to one of the form [F X] and this can be applied. *)
+  Declare Module repleteM (YM : TypeM) (EM : EquivM mM YM) : InM InF YM.
 
 End Comodality.
 
-Module Comodality_Theory (F : Subuniverse) (C : Comodality F).
+Module Comodality_Theory (InF : Subuniverse) (F : Comodality InF).
   
-  (** Let's see if we can actually extract what we've asserted.  Here's a type in the empty context. *)
-  Axiom X : Type.
-  Module XM <: TypeM.
-    Definition ty : Type2 := X.
-  End XM.
+  (** If [from F X] admits a section, then [X] lies in [F]. *)
+  Module inF_from_F_section_M (XM : TypeM).
+    Module FXM := F XM.
+    Module mM (sM : FunctionM XM FXM.mM) (HM : SectM XM FXM.mM sM FXM.fromM).
 
-  (** Here's the data about its coreflection. *)
-  Module CXM := C XM.
+      (** Boilerplate *)
+      Module s_o_from_M <: FunctionM FXM.mM FXM.mM
+        := ComposeM FXM.mM XM FXM.mM sM FXM.fromM.
+      Module idmap_FXM <: FunctionM FXM.mM FXM.mM.
+        Definition m : FXM.mM.m -> FXM.mM.m := idmap.
+      End idmap_FXM.
 
-  (** Let's assert that [Empty] lies in the subuniverse (we ought to be able to prove that). *)
-  Declare Module FEmptyM : InFM F EmptyM.
+      (** We intend to apply [coindpaths] to show that the composite of [s] and [from F X] in the other order is also the identity.  The following sort of boilerplate will be required whenever we apply [coindpaths]. *)
+      Module coindpaths_retr_M
+        := FXM.coindpathsM FXM.mM FXM.isinF_mM s_o_from_M idmap_FXM.
+      Module coindpaths_retr_p_M
+      : HomotopyM FXM.mM XM coindpaths_retr_M.fhM coindpaths_retr_M.fkM.
+        Definition m : FXM.fromM.m o sM.m o FXM.fromM.m == FXM.fromM.m.
+          intros x; unfold compose.
+          exact (HM.m (FXM.fromM.m x)).
+        Defined.
+      End coindpaths_retr_p_M.
+      Module coindpaths_retr_M_mM := coindpaths_retr_M.mM coindpaths_retr_p_M.
 
-  (** Here's the coreflected (closed) type. *)
-  Module flatXM := CXM.tyM.
+      (** Using this, we can show that [X] is equivalent to [F X]. *)
+      Module equiv_fromF_M : EquivM FXM.mM XM.
+        Definition m : FXM.mM.m <~> XM.m.
+        Proof.
+          (** Needs coq trunk *)
+          refine (equiv_adjointify FXM.from sM.m HM.m _).
+          apply (coindpaths_retr_M_mM.m).
+        Defined.
+      End equiv_fromF_M.
 
-  (** Now let's consider the unique map from [Empty] to [flatX], which of course also lives in the empty context. *)
-  Module Empty_recM <: FunctionM EmptyM flatXM.
-    (** These universe annotations are apparently necessary to get it accepted, as is writing [EmptyM.ty] instead of just [Empty]. *)
-    Definition fn : EmptyM.ty@{j i} -> flatXM.ty@{j i} := @Empty_rec flatXM.ty.
-  End Empty_recM.
+      (** Finally, we apply repleteness to this equivalence. *)
+      Module mM : InM InF XM := FXM.repleteM XM equiv_fromF_M.
+    End mM.
+  End inF_from_F_section_M.
 
-  (** Let's consider two copies of this map, compose them both with the counit [flatX -> X], consider the trivial homotopy between them, and try to lift it along the counit by the universal property.  Here's the module that contains data about liftings of such homotopies. *)
-  Module Coindpaths_Empty := CXM.coindpathsM EmptyM FEmptyM Empty_recM Empty_recM.
-
-  (** We have to declare the homotopy we want to lift as living in the empty context. *)
-  Module myhM <: HomotopyM EmptyM XM Coindpaths_Empty.domM Coindpaths_Empty.codM.
-    (** Coq trunk accepts this, although the pinned version gets an "index out of bounds" anomaly. *)
-    Definition htpy : Coindpaths_Empty.domM.fn@{j i} == Coindpaths_Empty.codM.fn@{j i}
-      := fun (x:EmptyM.ty@{j i}) => Empty_ind@{j j} (fun x => Coindpaths_Empty.domM.fn x = Coindpaths_Empty.codM.fn x) x.
-  End myhM.
-
-  (** Now we can declare the module that contains data about the lift of this *particular* homotopy. *)
-  Module Coindpaths_Empty_lhcM := Coindpaths_Empty.lift_htpy_compM myhM.
-
-  (** Finally, here is the computation rule for that lift. *)
-  Print Coindpaths_Empty_lhcM.comp.
-
-  (** Whew!  Is this really worth it?  *)
+  (** Using this, we can show that [Empty] lies in [F]. *)
+  Module isinF_Empty_M.
+    Module fsEM := inF_from_F_section_M EmptyM.
+    Module sM : FunctionM EmptyM fsEM.FXM.mM.
+      (** Need universe annotations to keep the right amount of polymorphism. *)
+      Definition m : EmptyM.m@{i j} -> fsEM.FXM.mM.m@{i j} := Empty_rec@{i i} _.
+    End sM.
+    Module HM : SectM EmptyM fsEM.FXM.mM sM fsEM.FXM.fromM.
+      Definition m : Sect sM.m fsEM.FXM.fromM.m := Empty_ind _.
+    End HM.
+    Module mM := fsEM.mM sM HM.
+  End isinF_Empty_M.
+  (** We give the final result a more descriptive toplevel name. *)
+  Module isinF_EmptyM : InM InF EmptyM := isinF_Empty_M.mM.mM.
 
 End Comodality_Theory.
