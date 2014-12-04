@@ -140,16 +140,6 @@ End InM.
 
 3. A proven or assumed implementation of [InM InF XM], which is a module wrapper around a closed witness that [X] lies in [F].  When we need a name for such a module, we will call it [isinF_XM]. *)
 
-(** We also have to assert repleteness. *)
-(* TODO: No longer needed?
-Module Type RepleteM (InF : Subuniverse) (XM YM : TypeM) (EM : EquivM YM XM).
-  Module InF_XM := InF XM.
-  Module InF_YM := InF YM.
-  (** This again is more internal than we would expect, but it can be obtained using [IsEquiv fromF]. *)
-  Parameter m : InF_YM.m -> InF_XM.m.
-End RepleteM.
-*)
-
 (** Next we have to express the universal property; we need a way to say that postcomposition with a map is an equivalence.  We will use a "liftable" style, dual to the notion of [ExtendableAlong] used for reflective subuniverses.  However, all the liftings have to act only on closed types and functions, because in models the universal property is not internalizable.  Unfortunately, this means that we cannot describe an "[oo]" sort of liftability, since we can't define a module type by [nat]-recursion.  Thus, we will restrict ourselves to 2-liftability, which is usually enough; if we ever need 3-liftability then we can either simply add it here or assume [Funext].
 
 Note that the hypothesis that [XM.m] lies in [F] is again internal rather than external.  This is again obtainable from an internal definition as [IsEquiv fromF].
