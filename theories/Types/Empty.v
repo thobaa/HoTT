@@ -44,11 +44,3 @@ Defined.
    [Empty], but this is really quite useless. As soon as an element
    of [Empty] is hypothesized, we can prove whatever we like with
    a simple elimination. *)
-
-(** ** Decidability *)
-
-Global Instance decidable_empty : Decidable Empty
-  := inr idmap.
-
-Global Instance decidablepaths_empty : DecidablePaths Empty
-  := fun x y => match x with end.

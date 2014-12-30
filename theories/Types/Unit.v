@@ -96,14 +96,6 @@ Global Instance contr_unit : Contr Unit | 0 := let x := {|
   contr := fun t : Unit => match t with tt => 1 end
 |} in x.
 
-(** ** Decidability *)
-
-Global Instance decidable_unit : Decidable Unit
-  := inl tt.
-
-Global Instance decidablepaths_unit : DecidablePaths Unit
-  := fun x y => inl (path_unit x y).
-
 (** ** Equivalences *)
 
 (** A contractible type is equivalent to [Unit]. *)

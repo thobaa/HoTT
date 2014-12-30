@@ -799,7 +799,21 @@ Section Reflective_Subuniverse.
     Qed.
       
   End StrongMonad.
-      
+
+  Section Decidability.
+
+    (** If [Empty] belongs to [O], then the reflection of any decidable type is decidable. *)
+    Global Instance decidable_O {A : Type} `{Decidable A} `{In O Empty}
+    : Decidable (O A).
+    Proof.
+      destruct (dec A) as [a|na].
+      - exact (inl (to O A a)).
+      - apply inr; intros oa.
+        exact (O_rec na oa).
+    Defined.
+
+  End Decidability.
+
 End Reflective_Subuniverse.
 
 (** Make the [O_inverts] notation global. *)

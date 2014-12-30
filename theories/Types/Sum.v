@@ -55,6 +55,10 @@ Definition inl_ne_inr {A B : Type} (a : A) (b : B)
 : inl a <> inr b
 := path_sum_inv.
 
+Definition inr_ne_inl {A B : Type} (b : B) (a : A)
+: inr b <> inl a
+:= path_sum_inv.
+
 (** This version produces only paths between closed terms, as opposed to paths between arbitrary inhabitants of sum types. *)
 Definition path_sum_inl {A : Type} (B : Type) {x x' : A}
 : inl x = inl x' -> x = x'
@@ -102,6 +106,54 @@ Defined.
 
 Definition equiv_path_sum {A B : Type} (z z' : A + B)
   := BuildEquiv _ _ _ (@isequiv_path_sum A B z z').
+
+(** ** Fibers of [inl] and [inr] *)
+
+(** It follows that the fibers of [inl] and [inr] are decidable hprops. *)
+
+Global Instance ishprop_hfiber_inl {A B : Type} (z : A + B)
+: IsHProp (hfiber inl z).
+Proof.
+  destruct z as [a|b]; unfold hfiber.
+  - refine (trunc_equiv' _
+              (equiv_functor_sigma' (equiv_idmap A)
+                 (fun x => equiv_path_sum (inl x) (inl a)))).
+  - refine (trunc_equiv _
+              (fun xp => inl_ne_inr (xp.1) b xp.2)^-1).
+Defined.
+
+Global Instance decidable_hfiber_inl {A B : Type} (z : A + B)
+: Decidable (hfiber inl z).
+Proof.
+  destruct z as [a|b]; unfold hfiber.
+  - refine (decidable_equiv' _
+              (equiv_functor_sigma' (equiv_idmap A)
+                 (fun x => equiv_path_sum (inl x) (inl a))) _).
+  - refine (decidable_equiv _
+              (fun xp => inl_ne_inr (xp.1) b xp.2)^-1 _).
+Defined.
+
+Global Instance ishprop_hfiber_inr {A B : Type} (z : A + B)
+: IsHProp (hfiber inr z).
+Proof.
+  destruct z as [a|b]; unfold hfiber.
+  - refine (trunc_equiv _
+              (fun xp => inr_ne_inl (xp.1) a xp.2)^-1).
+  - refine (trunc_equiv' _
+              (equiv_functor_sigma' (equiv_idmap B)
+                 (fun x => equiv_path_sum (inr x) (inr b)))).
+Defined.
+
+Global Instance decidable_hfiber_inr {A B : Type} (z : A + B)
+: Decidable (hfiber inr z).
+Proof.
+  destruct z as [a|b]; unfold hfiber.
+  - refine (decidable_equiv _
+              (fun xp => inr_ne_inl (xp.1) a xp.2)^-1 _).
+  - refine (decidable_equiv' _
+              (equiv_functor_sigma' (equiv_idmap B)
+                 (fun x => equiv_path_sum (inr x) (inr b))) _).
+Defined.
 
 (** ** Transport *)
 
@@ -543,6 +595,15 @@ Proof.
   - case (H a1 b2).
   - case (H a2 b1).
   - apply ap, path_ishprop.
+Defined.
+
+(** It follows that decidability of an hprop is again an hprop. *)
+
+Global Instance ishprop_decidable_hprop `{Funext} A `{IsHProp A}
+: IsHProp (Decidable A).
+Proof.
+  unfold Decidable; refine (ishprop_sum _ _ _).
+  intros a na; exact (na a).
 Defined.
 
 (** ** Decidability *)
