@@ -688,3 +688,21 @@ Tactic Notation "transparent" "assert" "(" ident(name) ":" constr(type) ")" :=
 Tactic Notation "transparent" "assert" "(" ident(name) ":" constr(type) ")" "by" tactic3(tac) := let name := fresh "H" in transparent assert (name : type); [ solve [ tac ] | ].
 Tactic Notation "transparent" "eassert" "(" ident(name) ":" open_constr(type) ")" := transparent assert (name : type).
 Tactic Notation "transparent" "eassert" "(" ident(name) ":" open_constr(type) ")" "by" tactic3(tac) := transparent assert (name : type) by tac.
+
+(** A version of Coq's [remember] that uses our equality. *)
+Ltac remember_as term name eqname :=
+  set (name := term) in *;
+  pose (eqname := idpath : term = name);
+  clearbody eqname name.
+
+Tactic Notation "remember" constr(term) "as" ident(name) "eqn" ident(eqname) :=
+  remember_as term name eqname.
+
+(** A variant that doesn't substitute in the goal and hypotheses. *)
+Ltac recall_as term name eqname :=
+  pose (name := term);
+  pose (eqname := idpath : term = name);
+  clearbody eqname name.
+
+Tactic Notation "recall" constr(term) "as" ident(name) "eqn" ident(eqname) :=
+  recall_as term name eqname.

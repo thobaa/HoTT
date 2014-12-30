@@ -471,6 +471,14 @@ Proof.
                        _ _ _); intros [x y]; reflexivity.
 Defined.
 
+Definition equiv_sigma_prod0 (A B : Type)
+: {a : A & B} <~> A * B.
+Proof.
+  refine (BuildEquiv _ _ (fun (w:{a:A & B}) => (w.1 , w.2)) _).
+  refine (BuildIsEquiv _ _ _ (fun (z:A*B) => (fst z ; snd z))
+                       _ _ _); intros [x y]; reflexivity.
+Defined.
+
 (** ** Universal mapping properties *)
 
 (** *** The positive universal property. *)
@@ -536,6 +544,16 @@ Proof.
     refine (path_sigma' P (contr a) (path_contr _ _)). }
   { intros u v.
     refine (trunc_equiv _ (path_sigma_uncurried P u v)). }
+Defined.
+
+(** The sigma of an arbitrary family of *disjoint* hprops is an hprop. *)
+Definition ishprop_sigma_disjoint
+           `{P : A -> Type} `{forall a, IsHProp (P a)}
+: (forall x y, P x -> P y -> x = y) -> IsHProp { x : A & P x }.
+Proof.
+  intros dj; apply hprop_allpath; intros [x px] [y py].
+  refine (path_sigma' P (dj x y px py) _).
+  apply path_ishprop.
 Defined.
 
 (** ** Subtypes (sigma types whose second components are hprops) *)
