@@ -75,9 +75,31 @@ Record PointedHomotopy {A B : PointedType} (f g : PointedMap A B) :=
     point_htpy : point_eq f = pointed_htpy (point A) @ point_eq g }.
 
 Arguments point_htpy {A B f g} p : rename.
+Arguments pointed_htpy {A B f g} p x.
 
 Coercion pointed_htpy : PointedHomotopy >-> pointwise_paths.
 
+Definition loopspace_2functor {A B : PointedType} {f g : PointedMap A B}
+           (p : PointedHomotopy f g)
+: PointedHomotopy (loopspace_functor f) (loopspace_functor g).
+Proof.
+  refine (Build_PointedHomotopy _ _ _ _ _ _).
+  - simpl; intros q.
+    rewrite (point_htpy p), (concat_A_pp), inv_pp, !concat_p_pp, concat_pV_p.
+    reflexivity.
+  - simpl.
+Abort.
+
+(** Settle for something less *)
+Definition loopspace_2functor {A B : PointedType} {f g : PointedMap A B}
+           (p : PointedHomotopy f g)
+: (loopspace_functor f) == (loopspace_functor g).
+Proof.
+  simpl; intros q.
+  rewrite (point_htpy p), (concat_A_pp), inv_pp, !concat_p_pp, concat_pV_p.
+  reflexivity.
+Qed.
+    
 (** Functoriality of loop spaces *)
 
 Definition loopspace_functor_compose {A B C : PointedType}
@@ -105,4 +127,4 @@ Proof.
   simpl; intros p.
   rewrite (ap_compose f g), !ap_pp, ap_V, !inv_pp, !concat_pp_p.
   reflexivity.
-Defined.
+Qed.
