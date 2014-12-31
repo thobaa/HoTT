@@ -594,8 +594,16 @@ Global Existing Instance dec_paths.
 
 (** A space is pointed if that space has a point. *)
 Class IsPointed (A : Type) := point : A.
-Definition pointedType := { u : Type & IsPointed u }.
+
 Arguments point A {_}.
+
+Record PointedType :=
+  { pointed_type : Type ;
+    ispointed_type : IsPointed pointed_type }.
+
+Coercion pointed_type : PointedType >-> Sortclass.
+
+Global Existing Instance ispointed_type.
 
 (** *** Homotopy fibers *)
 
