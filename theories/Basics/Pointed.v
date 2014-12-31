@@ -62,6 +62,9 @@ Proof.
   refine (concat_1p _ @ (concat_p1 _)^).
 Defined.
 
+Definition pointedmap_idmap (A : PointedType): PointedMap A A
+  := Build_PointedMap A A idmap 1.
+
 Definition pointedmap_compose {A B C : PointedType}
            (g : PointedMap B C) (f : PointedMap A B)
 : PointedMap A C
@@ -127,4 +130,11 @@ Proof.
   simpl; intros p.
   rewrite (ap_compose f g), !ap_pp, ap_V, !inv_pp, !concat_pp_p.
   reflexivity.
+Qed.
+
+Definition loopspace_functor_idmap (A : PointedType)
+: loopspace_functor (pointedmap_idmap A) == pointedmap_idmap (loopspace A).
+Proof.
+  intros p; simpl.
+  rewrite concat_p1, concat_1p; apply ap_idmap.
 Qed.
