@@ -1,13 +1,15 @@
 (* -*- mode: coq; mode: visual-line -*- *)
 (** * Pointed Types *)
 
-Require Import Overture.
+Require Import Overture PathGroupoids.
 
 Local Open Scope path_scope.
 Local Open Scope equiv_scope.
 
 (** Allow ourselves to implicitly generalize over types [A] and [B], and a function [f]. *)
 Generalizable Variables A B f.
+
+(** ** Constructions of pointed types *)
 
 (** Any contratible type is pointed. *)
 Global Instance ispointed_contr `{Contr A} : IsPointed A := center A.
@@ -26,15 +28,113 @@ Global Instance ispointed_sigma `{IsPointed A} `{IsPointed (B (point A))}
 Global Instance ispointed_prod `{IsPointed A, IsPointed B} : IsPointed (A * B)
   := (point A, point B).
 
+(** ** Loop spaces *)
+
 (** The type [x = x] is pointed. *)
 Global Instance ispointed_loop_space A (a : A) : IsPointed (a = a) := idpath.
 
 (** We can build an iterated loop space *)
-Definition loopSpace (A : pointedType) : pointedType :=
-  (A.1 = A.1; idpath).
+Definition loopspace (A : PointedType) : PointedType :=
+  Build_PointedType (point A = point A) idpath.
 
-Fixpoint iteratedLoopSpace (n : nat) (A : Type) `{H : IsPointed A} {struct n} : pointedType
+Fixpoint iterated_loopspace (n : nat) (A : Type) `{H : IsPointed A} {struct n} : PointedType
   := match n with
-       | O => existT IsPointed A (@point A H)
-       | S p => iteratedLoopSpace p (point = point)
+       | O => Build_PointedType A (@point A H)
+       | S p => iterated_loopspace p (point A = point A)
      end.
+
+(** ** Pointed functions *)
+
+Record PointedMap (A B : PointedType) :=
+  { pointed_fun : A -> B ;
+    point_eq : pointed_fun (point A) = point B }.
+
+Arguments point_eq {A B} f : rename.
+
+Coercion pointed_fun : PointedMap >-> Funclass.
+
+Definition loopspace_functor {A B : PointedType} (f : PointedMap A B)
+: PointedMap (loopspace A) (loopspace B).
+Proof.
+  refine (Build_PointedMap (loopspace A) (loopspace B)
+            (fun p => (point_eq f)^ @ (ap f p @ point_eq f)) _).
+  apply moveR_Vp; simpl.
+  refine (concat_1p _ @ (concat_p1 _)^).
+Defined.
+
+Definition pointedmap_idmap (A : PointedType): PointedMap A A
+  := Build_PointedMap A A idmap 1.
+
+Definition pointedmap_compose {A B C : PointedType}
+           (g : PointedMap B C) (f : PointedMap A B)
+: PointedMap A C
+  := Build_PointedMap A C (g o f)
+                      (ap g (point_eq f) @ point_eq g).
+
+(** ** Pointed homotopies *)
+
+Record PointedHomotopy {A B : PointedType} (f g : PointedMap A B) :=
+  { pointed_htpy : f == g ;
+    point_htpy : point_eq f = pointed_htpy (point A) @ point_eq g }.
+
+Arguments point_htpy {A B f g} p : rename.
+Arguments pointed_htpy {A B f g} p x.
+
+Coercion pointed_htpy : PointedHomotopy >-> pointwise_paths.
+
+Definition loopspace_2functor {A B : PointedType} {f g : PointedMap A B}
+           (p : PointedHomotopy f g)
+: PointedHomotopy (loopspace_functor f) (loopspace_functor g).
+Proof.
+  refine (Build_PointedHomotopy _ _ _ _ _ _).
+  - simpl; intros q.
+    rewrite (point_htpy p), (concat_A_pp), inv_pp, !concat_p_pp, concat_pV_p.
+    reflexivity.
+  - simpl.
+Abort.
+
+(** Settle for something less *)
+Definition loopspace_2functor {A B : PointedType} {f g : PointedMap A B}
+           (p : PointedHomotopy f g)
+: (loopspace_functor f) == (loopspace_functor g).
+Proof.
+  simpl; intros q.
+  rewrite (point_htpy p), (concat_A_pp), inv_pp, !concat_p_pp, concat_pV_p.
+  reflexivity.
+Qed.
+    
+(** Functoriality of loop spaces *)
+
+Definition loopspace_functor_compose {A B C : PointedType}
+           (g : PointedMap B C) (f : PointedMap A B)
+: PointedHomotopy (loopspace_functor (pointedmap_compose g f))
+                  (pointedmap_compose (loopspace_functor g) (loopspace_functor f)).
+Proof.
+  refine (Build_PointedHomotopy _ _
+            (loopspace_functor (pointedmap_compose g f))
+            (pointedmap_compose (loopspace_functor g) (loopspace_functor f))
+            _ _).
+  - simpl; intros p.
+    rewrite (ap_compose f g), !ap_pp, ap_V, !inv_pp, !concat_pp_p.
+    reflexivity.
+  - simpl.
+    (** Augh! *)
+Abort.
+
+(** Let's just do the unpointed version for now *)
+Definition loopspace_functor_compose {A B C : PointedType}
+           (g : PointedMap B C) (f : PointedMap A B)
+: (loopspace_functor (pointedmap_compose g f))
+  == (pointedmap_compose (loopspace_functor g) (loopspace_functor f)).
+Proof.
+  simpl; intros p.
+  rewrite (ap_compose f g), !ap_pp, ap_V, !inv_pp, !concat_pp_p.
+  reflexivity.
+Qed.
+
+Definition loopspace_functor_idmap (A : PointedType)
+: loopspace_functor (pointedmap_idmap A) == pointedmap_idmap (loopspace A).
+Proof.
+  intros p; simpl.
+  rewrite concat_p1, concat_1p; apply ap_idmap.
+Qed.
