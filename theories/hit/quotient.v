@@ -181,7 +181,7 @@ Section Equiv.
   Defined.
 
   (** From Ch6 *)
-  Theorem quotient_surjective: IsSurjection (class_of R).
+  Global Instance quotient_surjective: IsSurjection (class_of R).
   Proof.
     apply BuildIsSurjection.
     apply (quotient_ind_prop (fun y => merely (hfiber (class_of R) y))); try exact _.

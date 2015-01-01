@@ -89,7 +89,7 @@ Definition Book_2_1_6 := @HoTT.Basics.PathGroupoids.eckmann_hilton.
 (* ================================================== def:pointedtype *)
 (** Definition 2.1.7 *)
 
-Definition Book_2_1_7 := @HoTT.Basics.Overture.pointedType.
+Definition Book_2_1_7 := @HoTT.Basics.Overture.PointedType.
 
 (* ================================================== def:loopspace *)
 (** Definition 2.1.8 *)

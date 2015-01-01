@@ -2,7 +2,7 @@
 (** * Theorems about the natural numbers *)
 
 Require Import HoTT.Basics.
-Require Import Types.Unit Types.Empty.
+Require Import Types.Unit Types.Empty Types.Sigma.
 Require Import Peano.           (** From modified Coq stdlib *)
 
 Local Open Scope equiv_scope.
@@ -98,6 +98,98 @@ Proof.
     + apply ap, IH.
     + apply nat_plus_n_Sm.
 Qed.
+
+Definition nat_plus_assoc (a b c : nat)
+: a + (b + c) = (a + b) + c.
+Proof.
+  induction a as [|a IH].
+  - reflexivity.
+  - simpl. apply ap, IH.
+Defined.
+
+Definition nat_plus_cancel (a b c : nat)
+: a + b = a + c -> b = c.
+Proof.
+  induction a as [|a IH].
+  - exact idmap.
+  - intros p; apply IH; exact (nat_S_inj p).
+Defined.
+
+Definition nat_distrib (a b c : nat)
+: a * (b + c) = a * b + a * c.
+Proof.
+  induction a as [|a IH].
+  - reflexivity.
+  - simpl.
+    rewrite IH.
+    rewrite !nat_plus_assoc.
+    apply (ap (fun x => x + a*c)).
+    rewrite <- !nat_plus_assoc.
+    apply (ap (fun x => b + x)).
+    apply nat_plus_comm.
+Defined.
+
+Definition lt : nat -> nat -> Type
+  := fun n m => { p : nat & p.+1 + n = m }.
+
+Notation "n < m" := (lt n m).
+
+Global Instance ishprop_le n m : IsHProp (n < m).
+Proof.
+  apply hprop_allpath. intros [p p'] [q q'].
+  apply path_sigma_hprop.
+  refine (nat_plus_cancel n p q _).
+  refine (nat_plus_comm _ _ @ _ @ nat_plus_comm _ _).
+  exact (nat_S_inj (p' @ q'^)).
+Defined.
+
+Definition nat_trichotomy n m
+: (n < m) + (n = m) + (m < n).
+Proof.
+  revert m; induction n as [|n IHn].
+  { destruct m as [|m].
+    + apply inl, inr; reflexivity.
+    + apply inl, inl.
+      exists m. symmetry; apply nat_plus_n_O. }
+  { intros m; induction m as [|m IHm].
+    + apply inr.
+      exists n. symmetry; apply nat_plus_n_O.
+    + destruct IHm as [[p|p]|p].
+      * apply inl, inl.
+        exists (p.1.+1); simpl.
+        apply ap, p.2.
+      * apply inl, inl.
+        exists O.
+        apply ap, p.
+      * destruct (IHn m) as [[q|q]|q].
+        - apply inl, inl.
+          exists q.1.
+          refine (nat_plus_comm _ _ @ _); simpl.
+          apply ap. refine (nat_plus_comm _ _ @ q.2).
+        - apply inl, inr, ap, q.
+        - apply inr.
+          exists q.1.
+          refine (nat_plus_comm _ _ @ _); simpl.
+          apply ap. refine (nat_plus_comm _ _ @ q.2). }
+Defined.
+
+Definition nat_mult_cancel (a b c : nat)
+: (a.+1 * b = a.+1 * c) -> (b = c).
+Proof.
+  intros p.
+  destruct (nat_trichotomy b c) as [[[d q]|q]|[d q]];
+    [ apply Empty_rec | exact q | apply Empty_rec ].
+  - pose (q' := ap (mult a.+1) q).
+    rewrite nat_distrib in q'.
+    pose (q'' := nat_plus_comm _ _ @ q' @ p^ @ nat_plus_n_O _).
+    apply nat_plus_cancel in q''. simpl in q''.
+    exact ((path_nat _ _)^-1 q'').
+  - pose (q' := ap (mult a.+1) q).
+    rewrite nat_distrib in q'.
+    pose (q'' := nat_plus_comm _ _ @ q' @ p @ nat_plus_n_O _).
+    apply nat_plus_cancel in q''. simpl in q''.
+    exact ((path_nat _ _)^-1 q'').
+Defined.
 
 (** ** Exponentiation *)
 
