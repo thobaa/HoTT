@@ -828,6 +828,8 @@ Definition concat2 {A} {x y z : A} {p p' : x = y} {q q' : y = z} (h : p = p') (h
 
 Notation "p @@ q" := (concat2 p q)%path (at level 20) : path_scope.
 
+Arguments concat2 : simpl nomatch.
+
 (** 2-dimensional path inversion *)
 Definition inverse2 {A : Type} {x y : A} {p q : x = y} (h : p = q)
   : p^ = q^
@@ -880,6 +882,20 @@ Definition whiskerL_1p {A : Type} {x y : A} {p q : x = y} (h : p = q) :
     match p with idpath =>
       1
     end end.
+
+Definition whiskerR_p1_1 {A} {x : A} (h : idpath x = idpath x)
+: whiskerR h 1 = h.
+Proof.
+  refine (_ @ whiskerR_p1 h); simpl.
+  symmetry; refine (concat_p1 _ @ concat_1p _).
+Defined.
+
+Definition whiskerL_1p_1 {A} {x : A} (h : idpath x = idpath x)
+: whiskerL 1 h = h.
+Proof.
+  refine (_ @ whiskerL_1p h); simpl.
+  symmetry; refine (concat_p1 _ @ concat_1p _).
+Defined.
 
 Definition concat2_p1 {A : Type} {x y : A} {p q : x = y} (h : p = q) :
   h @@ 1 = whiskerR h 1 :> (p @ 1 = q @ 1)
