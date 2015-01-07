@@ -2,8 +2,7 @@
 Require Import Category.Core Category.Subcategory.Full.
 Require Import Category.Sigma.Univalent.
 Require Import Category.Morphisms Category.Univalent Category.Strict.
-Require Import HoTT.Basics.Trunc HoTT.Types.Nat HoTT.Types.Bool HoTT.TruncType HoTT.Spaces.Nat.
-Import BoolSortCoercion.
+Require Import HoTT.Basics.Trunc HoTT.Types.Nat HoTT.DProp HoTT.TruncType HoTT.Spaces.Nat.
 
 Set Universe Polymorphism.
 Set Implicit Arguments.
@@ -27,7 +26,7 @@ Set Asymmetric Patterns.
 
 Module Export Core.
   (** *** [[ω]], the linear order on ℕ *)
-  Definition omega : PreCategory
+  Definition omega `{Funext} : PreCategory
     := @Build_PreCategory
          nat
          leq
@@ -42,7 +41,7 @@ Module Export Core.
   (** Using [n + 1] elements allows us to agree with the common
       definition of an [n]-simplex, where a 0-simplex is a point, and
       a 1-simplex has two end-points, etc. *)
-  Definition chain (n : nat) : PreCategory
+  Definition chain `{Funext} (n : nat) : PreCategory
     := { m : omega | m <= n }%category.
 
   (** TODO: Possibly generalize this to arbitrary sets with arbitrary
@@ -66,19 +65,19 @@ End Utf8.
 
 
 Module Export Strict.
-  Definition isstrict_omega : IsStrictCategory omega.
+  Definition isstrict_omega `{Funext} : IsStrictCategory omega.
   Proof.
     exact _.
   Defined.
 
-  Definition isstrict_chain {n} : IsStrictCategory [n].
+  Definition isstrict_chain `{Funext} {n} : IsStrictCategory [n].
   Proof.
     exact _.
   Defined.
 End Strict.
 
 Module Export Univalent.
-  Global Instance iscategory_omega : IsCategory omega.
+  Global Instance iscategory_omega `{Funext} : IsCategory omega.
   Proof.
     intros s d.
     refine (isequiv_iff_hprop _ _).
@@ -86,7 +85,7 @@ Module Export Univalent.
     { intro m; apply leq_antisym; apply m. }
   Defined.
 
-  Definition iscategory_chain {n} : IsCategory [n].
+  Definition iscategory_chain `{Funext} {n} : IsCategory [n].
   Proof.
     exact _.
   Defined.

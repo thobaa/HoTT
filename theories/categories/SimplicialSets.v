@@ -29,7 +29,8 @@ Module Export Core.
         example, [nat -> nat -> Type] with [PreCategory -> PreCategory
         -> Type] by silently inserting [chain]. *)
 
-    Local Coercion chain : nat >-> PreCategory.
+    Definition chain' : nat -> PreCategory := chain.
+    Local Coercion chain' : nat >-> PreCategory.
 
     Definition simplex_category
       := @Build_PreCategory
