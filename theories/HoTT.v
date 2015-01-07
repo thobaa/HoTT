@@ -19,6 +19,7 @@ Require Export Factorization.
 Require Export Constant.
 Require Export ObjectClassifier.
 Require Export TruncType.
+Require Export DProp.
 Require Export NullHomotopy.
 Require Export Idempotents.
 
